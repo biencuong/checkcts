@@ -53,6 +53,13 @@ app.get('/api/history', (req, res) => {
   res.json({ count: dbStore.countCerts(), certs: dbStore.listCerts() });
 });
 
+// Xóa toàn bộ lịch sử nội bộ (dọn dữ liệu test). Cần admin key.
+app.delete('/api/history', (req, res) => {
+  if (!requireKey(req, res)) return;
+  const deleted = dbStore.clearCerts();
+  res.json({ ok: true, deleted });
+});
+
 app.get('/api/history/export', async (req, res) => {
   if (!requireKey(req, res)) return;
   const certs = dbStore.listCerts().map((c) => ({

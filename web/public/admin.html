@@ -30,6 +30,8 @@
     .pager button.active { background: var(--coral); color: #fff; border-color: var(--coral); cursor: default; }
     .pager button:disabled { opacity: .4; cursor: default; }
     .pager .pinfo { color: var(--muted); font-size: 13px; margin: 0 6px; }
+    .btn.danger { color: var(--bad-fg); border-color: #E3B4AA; }
+    .btn.danger:hover { background: var(--bad-bg); }
   </style>
 </head>
 <body>
@@ -55,13 +57,14 @@
           <button id="clearBtn" class="btn btn-outline">Xóa lọc</button>
           <button id="csvBtn" class="btn btn-outline">Tải CSV (kết quả lọc)</button>
           <a id="expBtn" class="btn btn-outline" href="#">Xuất Excel (tất cả)</a>
+          <button id="purgeBtn" class="btn btn-outline danger" title="Xóa toàn bộ lịch sử đã lưu (không hoàn tác)">Xóa toàn bộ</button>
         </div>
       </div>
 
       <div class="filters">
         <label>Người/Tổ chức (CN)<input data-f="commonName" type="text" /></label>
-        <label>Đơn vị (OU)<input data-f="orgUnit" type="text" /></label>
-        <label>Cơ quan chủ quản (O)<input data-f="org" type="text" /></label>
+        <label>Đơn vị (OU)<input data-f="orgUnit" type="text" list="dlOU" placeholder="Chọn hoặc gõ để tìm…" /></label>
+        <label>Cơ quan chủ quản (O)<input data-f="org" type="text" list="dlO" placeholder="Chọn hoặc gõ để tìm…" /></label>
         <label>Email<input data-f="email" type="text" /></label>
         <label>Số serial<input data-f="serial" type="text" /></label>
         <label>Nhà phát hành (CA)<input data-f="issuerCN" type="text" /></label>
@@ -79,13 +82,17 @@
         <label>Cảnh báo đơn vị
           <select id="fWarn">
             <option value="">— Tất cả —</option>
-            <option value="1">Chỉ có cảnh báo</option>
-            <option value="0">Không cảnh báo</option>
+            <option value="1">Có cảnh báo (bất kỳ)</option>
+            <option value="hg">Hà Giang (đã sáp nhập)</option>
+            <option value="huyen">Còn ghi cấp Huyện</option>
+            <option value="0">Không có cảnh báo</option>
           </select>
         </label>
         <label>Hết hạn từ ngày<input id="fExpFrom" type="date" /></label>
         <label>Hết hạn đến ngày<input id="fExpTo" type="date" /></label>
       </div>
+      <datalist id="dlOU"></datalist>
+      <datalist id="dlO"></datalist>
 
       <div id="summary" class="summary muted"></div>
       <div class="tablewrap">
@@ -165,7 +172,10 @@
       return certs.map((c, i) => {
         const _status = computeStatus(c);
         const _warn = adminWarn(c);
-        const _search = norm(SEARCH_FIELDS.map((f) => c[f]).filter(Boolean).join(' '));
+        // Ô tìm kiếm thông minh phủ: họ tên, đơn vị, chủ quản, serial, email, CA, nguồn,
+        // + hết hạn (ngày), cảnh báo và trạng thái.
+        const _search = norm(SEARCH_FIELDS.map((f) => c[f]).filter(Boolean).join(' ')
+          + ' ' + fmtDate(c.notBefore) + ' ' + fmtDate(c.notAfter) + ' ' + _warn + ' ' + _status);
         return Object.assign({}, c, { _idx0: i, _status, _warn, _search });
       });
     }
@@ -196,11 +206,16 @@
     }
 
     function buildSourceOptions() {
+      const uniq = (key) => Array.from(new Set(state.all.map((c) => c[key]).filter(Boolean)))
+        .sort((a, b) => String(a).localeCompare(String(b), 'vi'));
       const sel = $('fSource');
       const cur = sel.value;
-      const sources = Array.from(new Set(state.all.map((c) => c.source).filter(Boolean))).sort();
-      sel.innerHTML = '<option value="">— Tất cả —</option>' + sources.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+      sel.innerHTML = '<option value="">— Tất cả —</option>'
+        + uniq('source').map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
       sel.value = cur;
+      // Đổ giá trị thật vào datalist để Đơn vị/Chủ quản vừa chọn được vừa gõ tìm được
+      $('dlOU').innerHTML = uniq('orgUnit').map((v) => `<option value="${esc(v)}"></option>`).join('');
+      $('dlO').innerHTML = uniq('org').map((v) => `<option value="${esc(v)}"></option>`).join('');
     }
 
     function buildHead() {
@@ -242,6 +257,8 @@
         if (fSource && c.source !== fSource) return false;
         if (fWarn === '1' && !c._warn) return false;
         if (fWarn === '0' && c._warn) return false;
+        if (fWarn === 'hg' && !norm(c._warn).includes('ha giang')) return false;
+        if (fWarn === 'huyen' && !norm(c._warn).includes('huyen')) return false;
         if (from || to) {
           if (!c.notAfter) return false;
           const na = new Date(c.notAfter);
@@ -337,6 +354,19 @@
       document.querySelectorAll('.filters input').forEach((el) => (el.value = ''));
       document.querySelectorAll('.filters select').forEach((el) => (el.value = ''));
       state.page = 1; apply();
+    };
+
+    // Xóa toàn bộ lịch sử (dọn dữ liệu test) — cần khóa, có xác nhận
+    $('purgeBtn').onclick = async () => {
+      const key = $('key').value.trim();
+      if (!confirm('Xóa TOÀN BỘ lịch sử CKS đã lưu? Hành động KHÔNG hoàn tác.')) return;
+      try {
+        const r = await fetch('/api/history?key=' + encodeURIComponent(key), { method: 'DELETE' });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Lỗi');
+        alert('Đã xóa ' + (d.deleted || 0) + ' chứng thư.');
+        load();
+      } catch (e) { alert('Không xóa được: ' + e.message); }
     };
 
     // ---- Xuất CSV theo kết quả đang lọc ----
