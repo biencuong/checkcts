@@ -18,6 +18,9 @@ web/public/download/*.exe
 # Tài liệu mẫu chứa dữ liệu cá nhân thật - KHÔNG đẩy lên
 *.pdf
 
+# DB lịch sử nội bộ (dữ liệu cá nhân: tên, serial) - mỗi máy/máy chủ giữ riêng, KHÔNG commit
+web/data/*.db
+
 # Cấu hình cục bộ Claude Code
 .claude/
 
