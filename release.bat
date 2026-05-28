@@ -2,7 +2,7 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 echo ============================================================
-echo  CheckCTS - Tao Release v1.0 va upload 2 file .exe
+echo  CheckCTS - Tao Release v1.1 va upload 2 file .exe
 echo  Repo: https://github.com/biencuong/checkcts
 echo ============================================================
 
@@ -18,17 +18,17 @@ if errorlevel 1 (
 if not exist "dist\CheckCTS-Agent.exe" echo [CANH BAO] Thieu dist\CheckCTS-Agent.exe
 if not exist "dist\CheckCTS.exe" echo [CANH BAO] Thieu dist\CheckCTS.exe
 
-echo Tao release v1.0 va upload...
-gh release create v1.0 ^
+echo Tao release v1.1 va upload...
+gh release create v1.1 ^
   --repo biencuong/checkcts ^
-  --title "CheckCTS v1.0" ^
-  --notes "Ban phat hanh dau tien: agent doc token + ban offline day du." ^
+  --title "CheckCTS v1.1" ^
+  --notes "Agent doc token (PKCS11 + kho Windows), giao dien moi, canh bao don vi hanh chinh." ^
   "dist\CheckCTS-Agent.exe" "dist\CheckCTS.exe"
 
 if errorlevel 1 (
     echo.
-    echo Neu tag v1.0 da ton tai, dung lenh sau de upload de len release cu:
-    echo   gh release upload v1.0 "dist\CheckCTS-Agent.exe" "dist\CheckCTS.exe" --clobber --repo biencuong/checkcts
+    echo Neu tag v1.1 da ton tai, dung lenh sau de upload de len release cu:
+    echo   gh release upload v1.1 "dist\CheckCTS-Agent.exe" "dist\CheckCTS.exe" --clobber --repo biencuong/checkcts
 ) else (
     echo.
     echo Da tao release va upload xong. Kiem tra:

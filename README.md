@@ -44,7 +44,7 @@ Yêu cầu: **Node.js 18+**, **Python 3.10+**, driver PKCS#11 của USB token (v
 # Web
 cd web
 npm install
-node server.js            # http://localhost:3000
+node server.js            # http://localhost:3900
 
 # Agent đọc token (cửa sổ riêng)
 pip install PyKCS11 pyhanko cryptography

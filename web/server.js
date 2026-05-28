@@ -91,5 +91,5 @@ app.post('/api/report/pdf', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3900;
 app.listen(PORT, () => console.log(`CheckCTS web chạy tại http://localhost:${PORT}`));

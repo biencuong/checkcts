@@ -14,13 +14,39 @@ Endpoint:
     GET /certs  -> {"tokens":[{label,serial,driver,certs:[base64 DER,...]}]}
 """
 import sys
+import os
+import socket
 import json
+import logging
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import checkcts
 
 VERSION = "1.0"
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 8765
+
+# Ghi log ra file de debug khi chay an (hidden window)
+_log_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "agent.log")
+logging.basicConfig(
+    filename=_log_file, level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    encoding="utf-8",
+)
+
+
+class Server(ThreadingHTTPServer):
+    """ThreadingHTTPServer voi quyen bind mo rong tren Windows (fix WinError 10013)."""
+    allow_reuse_address = True
+
+    def server_bind(self):
+        # Windows mac dinh dat SO_EXCLUSIVEADDRUSE gay ra WinError 10013 (WSAEACCES).
+        # Tat co nay truoc khi bind cho phep tai su dung cong sau khi dich vu dung/khoi dong lai.
+        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            try:
+                self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 0)
+            except OSError:
+                pass
+        super().server_bind()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -65,14 +91,29 @@ def main():
     print(" CheckCTS Agent v%s - doc USB token cho web" % VERSION)
     print(" Dang chay tai: http://127.0.0.1:%d" % PORT)
     print(" Endpoint: /ping  /certs")
-    print(" GIU CUA SO NAY MO trong khi dung web. Dong cua so = tat agent.")
     print("=" * 60)
-    srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+    try:
+        srv = Server(("127.0.0.1", PORT), Handler)
+    except OSError as e:
+        msg = (
+            f"[LOI] Khong the mo cong {PORT}: {e}\n"
+            "  -> Hay chay voi quyen Administrator, hoac:\n"
+            "     netsh int ipv4 add excludedportrange protocol=tcp startport=8765 numberofports=1\n"
+            "  -> Hoac doi sang cong khac: python agent.py 9000"
+        )
+        print(msg)
+        logging.error(msg)
+        import time; time.sleep(30)
+        sys.exit(1)
+
+    logging.info("Agent khoi dong tai cong %d", PORT)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
         print("\nDa dung agent.")
         srv.shutdown()
+    finally:
+        logging.info("Agent da dung.")
 
 
 if __name__ == "__main__":
