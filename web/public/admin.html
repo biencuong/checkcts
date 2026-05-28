@@ -7,14 +7,12 @@
   <link rel="stylesheet" href="styles.css" />
   <meta name="robots" content="noindex,nofollow" />
   <style>
+    main { max-width: none; }
     .loginrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .loginrow input { padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; width: 260px; font-size: 14px; }
     .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
     .search { flex: 1 1 360px; min-width: 220px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 9px; font-size: 14px; }
     .toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(188px, 1fr)); gap: 10px 12px; padding: 13px; margin-bottom: 12px; background: var(--cream-2); border: 1px solid var(--line); border-radius: 10px; }
-    .filters label { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .2px; }
-    .filters input, .filters select { padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; background: #fff; color: var(--ink); font-weight: 400; text-transform: none; }
     .summary { margin: 4px 2px 10px; font-size: 13px; }
     .summary b { color: var(--ink); }
     .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
@@ -61,39 +59,6 @@
           <button id="purgeBtn" class="btn btn-outline danger" title="Xóa toàn bộ lịch sử đã lưu (không hoàn tác)">Xóa toàn bộ</button>
         </div>
       </div>
-
-      <div class="filters">
-        <label>Người/Tổ chức (CN)<input data-f="commonName" type="text" /></label>
-        <label>Đơn vị (OU)<input data-f="orgUnit" type="text" list="dlOU" placeholder="Chọn hoặc gõ để tìm…" /></label>
-        <label>Cơ quan chủ quản (O)<input data-f="org" type="text" list="dlO" placeholder="Chọn hoặc gõ để tìm…" /></label>
-        <label>Email<input data-f="email" type="text" /></label>
-        <label>Số serial<input data-f="serial" type="text" /></label>
-        <label>Nhà phát hành (CA)<input data-f="issuerCN" type="text" /></label>
-        <label>Địa phương (L)<input data-f="locality" type="text" /></label>
-        <label>Trạng thái
-          <select id="fStatus">
-            <option value="">— Tất cả —</option>
-            <option value="Còn hiệu lực">Còn hiệu lực</option>
-            <option value="Sắp hết hạn">Sắp hết hạn (≤30 ngày)</option>
-            <option value="Đã hết hạn">Đã hết hạn</option>
-            <option value="Chưa hiệu lực">Chưa hiệu lực</option>
-          </select>
-        </label>
-        <label>Nguồn<select id="fSource"><option value="">— Tất cả —</option></select></label>
-        <label>Cảnh báo đơn vị
-          <select id="fWarn">
-            <option value="">— Tất cả —</option>
-            <option value="1">Có cảnh báo (bất kỳ)</option>
-            <option value="hg">Hà Giang (đã sáp nhập)</option>
-            <option value="huyen">Còn ghi cấp Huyện</option>
-            <option value="0">Không có cảnh báo</option>
-          </select>
-        </label>
-        <label>Hết hạn từ ngày<input id="fExpFrom" type="date" /></label>
-        <label>Hết hạn đến ngày<input id="fExpTo" type="date" /></label>
-      </div>
-      <datalist id="dlOU"></datalist>
-      <datalist id="dlO"></datalist>
 
       <div id="summary" class="summary muted"></div>
       <div class="tablewrap">
@@ -195,7 +160,6 @@
         $('status').textContent = ` Tổng ${state.all.length} chứng thư`;
         $('expBtn').setAttribute('href', '/api/history/export?key=' + encodeURIComponent(key));
         $('panel').style.display = '';
-        buildSourceOptions();
         buildHead();
         state.page = 1;
         apply();
@@ -204,19 +168,6 @@
         $('panel').style.display = 'none';
         alert('Không tải được: ' + e.message);
       }
-    }
-
-    function buildSourceOptions() {
-      const uniq = (key) => Array.from(new Set(state.all.map((c) => c[key]).filter(Boolean)))
-        .sort((a, b) => String(a).localeCompare(String(b), 'vi'));
-      const sel = $('fSource');
-      const cur = sel.value;
-      sel.innerHTML = '<option value="">— Tất cả —</option>'
-        + uniq('source').map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
-      sel.value = cur;
-      // Đổ giá trị thật vào datalist để Đơn vị/Chủ quản vừa chọn được vừa gõ tìm được
-      $('dlOU').innerHTML = uniq('orgUnit').map((v) => `<option value="${esc(v)}"></option>`).join('');
-      $('dlO').innerHTML = uniq('org').map((v) => `<option value="${esc(v)}"></option>`).join('');
     }
 
     function buildHead() {
@@ -233,42 +184,11 @@
       });
     }
 
-    // ---- Bộ lọc + tìm kiếm + sắp xếp ----
-    function fieldFilters() {
-      const out = {};
-      document.querySelectorAll('.filters input[data-f]').forEach((el) => {
-        const v = norm(el.value); if (v) out[el.getAttribute('data-f')] = v;
-      });
-      return out;
-    }
-
+    // ---- Tìm kiếm + sắp xếp ----
     function apply() {
+      // 1 ô tìm kiếm thông minh: nhiều từ khóa cách nhau bằng dấu cách = lọc AND trên mọi trường
       const terms = norm($('q').value).split(/\s+/).filter(Boolean);
-      const ff = fieldFilters();
-      const fStatus = $('fStatus').value;
-      const fSource = $('fSource').value;
-      const fWarn = $('fWarn').value;
-      const from = $('fExpFrom').value ? new Date($('fExpFrom').value + 'T00:00:00') : null;
-      const to = $('fExpTo').value ? new Date($('fExpTo').value + 'T23:59:59') : null;
-
-      let rows = state.all.filter((c) => {
-        if (terms.length && !terms.every((t) => c._search.includes(t))) return false;
-        for (const k in ff) { if (!norm(c[k]).includes(ff[k])) return false; }
-        if (fStatus && c._status !== fStatus) return false;
-        if (fSource && c.source !== fSource) return false;
-        if (fWarn === '1' && !c._warn) return false;
-        if (fWarn === '0' && c._warn) return false;
-        if (fWarn === 'hg' && !norm(c._warn).includes('ha giang')) return false;
-        if (fWarn === 'huyen' && !norm(c._warn).includes('huyen')) return false;
-        if (from || to) {
-          if (!c.notAfter) return false;
-          const na = new Date(c.notAfter);
-          if (isNaN(na)) return false;
-          if (from && na < from) return false;
-          if (to && na > to) return false;
-        }
-        return true;
-      });
+      let rows = state.all.filter((c) => terms.length === 0 || terms.every((t) => c._search.includes(t)));
 
       const key = state.sortKey, dir = state.sortDir;
       const col = COLS.find((x) => x.key === key) || {};
@@ -353,15 +273,8 @@
     let t;
     const onFilter = () => { clearTimeout(t); t = setTimeout(() => { state.page = 1; apply(); }, 200); };
     $('q').addEventListener('input', onFilter);
-    document.querySelectorAll('.filters input').forEach((el) => el.addEventListener('input', onFilter));
-    document.querySelectorAll('.filters select').forEach((el) => el.addEventListener('change', () => { state.page = 1; apply(); }));
 
-    $('clearBtn').onclick = () => {
-      $('q').value = '';
-      document.querySelectorAll('.filters input').forEach((el) => (el.value = ''));
-      document.querySelectorAll('.filters select').forEach((el) => (el.value = ''));
-      state.page = 1; apply();
-    };
+    $('clearBtn').onclick = () => { $('q').value = ''; state.page = 1; apply(); };
 
     // Xóa toàn bộ lịch sử (dọn dữ liệu test) — cần khóa, có xác nhận
     $('purgeBtn').onclick = async () => {
