@@ -1,0 +1,26 @@
+# Node
+web/node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+
+# PyInstaller build output
+build/
+dist/
+*.spec
+
+# Binaries (phát hành qua GitHub Releases, không commit vào repo - vượt giới hạn 100MB)
+*.exe
+web/public/download/*.exe
+
+# Tài liệu mẫu chứa dữ liệu cá nhân thật - KHÔNG đẩy lên
+*.pdf
+
+# Cấu hình cục bộ Claude Code
+.claude/
+
+# Khác
+.DS_Store
+Thumbs.db
