@@ -1,19 +1,44 @@
 'use strict';
 /** Xuất báo cáo kiểm tra ra Excel (exceljs) và PDF (pdfkit + font tiếng Việt). */
 const fs = require('fs');
+const path = require('path');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 
-// Tìm 1 font TTF hỗ trợ tiếng Việt (Windows có sẵn Arial/Times)
+// Font TTF hỗ trợ tiếng Việt. Thứ tự ưu tiên:
+//  1) biến môi trường CHECKCTS_FONT / CHECKCTS_FONT_BOLD
+//  2) font kèm theo bộ cài (web/fonts/) - đặt DejaVuSans.ttf vào đây nếu muốn tự chứa
+//  3) font hệ thống Linux (aaPanel) / Windows / macOS
+const BUNDLED_DIR = path.join(__dirname, '..', 'fonts');
 const FONT_CANDIDATES = [
+  process.env.CHECKCTS_FONT,
+  path.join(BUNDLED_DIR, 'font.ttf'),
+  path.join(BUNDLED_DIR, 'DejaVuSans.ttf'),
+  // Linux
+  '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+  '/usr/share/fonts/dejavu/DejaVuSans.ttf',
+  '/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf',
+  '/usr/share/fonts/google-noto/NotoSans-Regular.ttf',
+  '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+  '/usr/share/fonts/liberation/LiberationSans-Regular.ttf',
+  // Windows
   'C:\\Windows\\Fonts\\arial.ttf',
   'C:\\Windows\\Fonts\\times.ttf',
   'C:\\Windows\\Fonts\\segoeui.ttf',
-];
+  // macOS
+  '/Library/Fonts/Arial.ttf',
+].filter(Boolean);
 const FONT_BOLD_CANDIDATES = [
+  process.env.CHECKCTS_FONT_BOLD,
+  path.join(BUNDLED_DIR, 'font-bold.ttf'),
+  path.join(BUNDLED_DIR, 'DejaVuSans-Bold.ttf'),
+  '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+  '/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf',
+  '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+  '/usr/share/fonts/liberation/LiberationSans-Bold.ttf',
   'C:\\Windows\\Fonts\\arialbd.ttf',
   'C:\\Windows\\Fonts\\timesbd.ttf',
-];
+].filter(Boolean);
 const pickFont = (list) => list.find((p) => fs.existsSync(p)) || null;
 
 function fmtDate(iso) {
