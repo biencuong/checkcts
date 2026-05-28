@@ -121,6 +121,15 @@ main { max-width: 1160px; margin: 24px auto; padding: 0 18px; }
 .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #E4D3C9; border-top-color: var(--coral); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ===== Footer ===== */
+.site-footer {
+  max-width: 1160px; margin: 32px auto 26px; padding: 16px 18px 0;
+  border-top: 1px solid var(--line); text-align: center;
+  font-size: 13px; color: var(--muted);
+}
+.site-footer a { color: var(--coral); text-decoration: none; font-weight: 600; }
+.site-footer a:hover { color: var(--coral-dk); text-decoration: underline; }
+
 /* ===== Bảng lịch sử (admin) ===== */
 .histtable { width: 100%; border-collapse: collapse; font-size: 13px; }
 .histtable th, .histtable td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; }
