@@ -33,9 +33,17 @@ ping -n 2 127.0.0.1 >nul
 echo [1/2] Khoi dong CheckCTS Agent (cong 8765)...
 if exist "%~dp0dist\CheckCTS-Agent.exe" (
     powershell -Command "Start-Process -FilePath '%~dp0dist\CheckCTS-Agent.exe' -WindowStyle Hidden -WorkingDirectory '%~dp0dist'"
-) else (
-    powershell -Command "Start-Process -FilePath 'python' -ArgumentList '\"%~dp0agent.py\"' -WindowStyle Hidden -WorkingDirectory '%~dp0'"
+    goto :agent_done
 )
+:: Tim Python that (tranh stub python.exe 0 byte cua Microsoft Store trong WindowsApps)
+call :find_python
+if not defined PYEXE (
+    echo [LOI] Khong tim thay Python 3 de chay agent ^(doc token CKS^).
+    echo       Cai Python 3 roi mo LAI cua so, hoac build CheckCTS-Agent.exe.
+) else (
+    powershell -Command "Start-Process -FilePath '%PYEXE%' -ArgumentList '\"%~dp0agent.py\"' -WindowStyle Hidden -WorkingDirectory '%~dp0'"
+)
+:agent_done
 
 :: Khoi dong CheckCTS Web Server (an cua so)
 echo [2/2] Khoi dong CheckCTS Web Server (cong 3900)...
@@ -74,3 +82,16 @@ echo  (Dich vu tiep tuc chay nen - dung stop.bat de tat)
 echo ============================================================
 timeout /t 5 >nul
 :: Cua so dong, dich vu van chay nen
+exit /b 0
+
+:: -------------------------------------------------------------------
+:: Tim duong dan python.exe that, BO QUA stub WindowsApps (0 byte) cua
+:: Microsoft Store - stub nay hay nam dau PATH khien agent khong khoi dong.
+:: -------------------------------------------------------------------
+:find_python
+set "PYEXE="
+for /d %%d in ("%LOCALAPPDATA%\Programs\Python\Python3*") do if exist "%%d\python.exe" set "PYEXE=%%d\python.exe"
+if not defined PYEXE if exist "%LOCALAPPDATA%\Programs\Python\Launcher\py.exe" set "PYEXE=%LOCALAPPDATA%\Programs\Python\Launcher\py.exe"
+if not defined PYEXE for /d %%d in ("%ProgramFiles%\Python3*") do if exist "%%d\python.exe" set "PYEXE=%%d\python.exe"
+if not defined PYEXE if exist "%SystemRoot%\py.exe" set "PYEXE=%SystemRoot%\py.exe"
+goto :eof
