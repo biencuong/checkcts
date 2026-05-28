@@ -30,6 +30,7 @@
     .pager button.active { background: var(--coral); color: #fff; border-color: var(--coral); cursor: default; }
     .pager button:disabled { opacity: .4; cursor: default; }
     .pager .pinfo { color: var(--muted); font-size: 13px; margin: 0 6px; }
+    .pager .pjump { width: 58px; padding: 5px 7px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; text-align: center; }
     .btn.danger { color: var(--bad-fg); border-color: #E3B4AA; }
     .btn.danger:hover { background: var(--bad-bg); }
   </style>
@@ -339,7 +340,13 @@
       if (e < maxPage) { if (e < maxPage - 1) pager.appendChild(Object.assign(document.createElement('span'), { className: 'pinfo', textContent: '…' })); pager.appendChild(btn(String(maxPage), maxPage, {})); }
       pager.appendChild(btn('›', p + 1, { disabled: p === maxPage }));
       pager.appendChild(btn('»', maxPage, { disabled: p === maxPage }));
-      pager.appendChild(Object.assign(document.createElement('span'), { className: 'pinfo', textContent: `Trang ${p}/${maxPage}` }));
+      pager.appendChild(Object.assign(document.createElement('span'), { className: 'pinfo', textContent: `Trang ${p}/${maxPage} ·` }));
+      pager.appendChild(Object.assign(document.createElement('span'), { className: 'pinfo', textContent: 'Tới trang' }));
+      const jump = document.createElement('input');
+      jump.type = 'number'; jump.min = 1; jump.max = maxPage; jump.value = p; jump.className = 'pjump'; jump.title = 'Nhập số trang rồi Enter';
+      jump.onkeydown = (e) => { if (e.key === 'Enter') go(+jump.value || 1); };
+      jump.onchange = () => go(+jump.value || 1);
+      pager.appendChild(jump);
     }
 
     // ---- Sự kiện lọc (debounce cho ô text) ----
