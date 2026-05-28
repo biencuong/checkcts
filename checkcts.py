@@ -279,8 +279,37 @@ def find_pkcs11_dlls():
     return found
 
 
+def read_windows_certs_b64():
+    """Doc base64 DER cac chung thu CO khoa bi mat trong kho Windows CurrentUser\\My.
+    (Cach ma cac app ky so pho bien - vd QI Signer - lay danh sach chung thu token.)
+    """
+    import base64
+    # Cach 1 (tin cay nhat, ke ca khi dong goi .exe): doc kho Windows truc tiep qua CryptoAPI
+    try:
+        import ssl
+        out = []
+        for der, enc, trust in ssl.enum_certificates("MY"):
+            if der:
+                out.append(base64.b64encode(der).decode("ascii"))
+        if out:
+            return out
+    except Exception:
+        pass
+    # Cach 2 (du phong): powershell
+    ps = ("Get-ChildItem Cert:\\CurrentUser\\My | Where-Object { $_.HasPrivateKey } | "
+          "ForEach-Object { [Convert]::ToBase64String($_.RawData) }")
+    flags = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW
+    try:
+        out = subprocess.run(["powershell", "-NoProfile", "-Command", ps],
+                             capture_output=True, text=True, timeout=30,
+                             stdin=subprocess.DEVNULL, creationflags=flags)
+        return [ln.strip() for ln in (out.stdout or "").splitlines() if ln.strip()]
+    except Exception:
+        return []
+
+
 def read_token_certs():
-    """Doc chung thu tu USB token qua PKCS#11, tra ve du lieu (KHONG in).
+    """Doc chung thu tu USB token qua PKCS#11 VA kho chung thu Windows (dedup), tra ve du lieu.
     Dung cho agent local phuc vu web. Moi cert tra ve dang base64 DER.
     -> [{driver, label, serial, manufacturer, model, certs:[base64,...]}]
     """
@@ -288,6 +317,7 @@ def read_token_certs():
     import PyKCS11
 
     result = []
+    seen_b64 = set()
     for dll in find_pkcs11_dlls():
         pkcs11 = PyKCS11.PyKCS11Lib()
         try:
@@ -314,13 +344,22 @@ def read_token_certs():
                 objs = session.findObjects([(PyKCS11.CKA_CLASS, PyKCS11.CKO_CERTIFICATE)])
                 for o in objs:
                     val = session.getAttributeValue(o, [PyKCS11.CKA_VALUE])[0]
-                    der = bytes(val)
-                    tok["certs"].append(base64.b64encode(der).decode("ascii"))
+                    b64 = base64.b64encode(bytes(val)).decode("ascii")
+                    tok["certs"].append(b64)
+                    seen_b64.add(b64)
                 session.closeSession()
             except Exception:
                 pass
             if tok["certs"]:
                 result.append(tok)
+
+    # Du phong: neu PKCS#11 KHONG thay token nao (vd may chi co cert trong kho Windows nhu QI),
+    # doc tu kho chung thu Windows. May doc duoc token thi khong them de tranh nhieu.
+    if not result:
+        win = read_windows_certs_b64()
+        if win:
+            result.append({"driver": "Windows Certificate Store", "label": "Kho chứng thư Windows",
+                           "serial": "", "manufacturer": "", "model": "", "certs": win})
     return result
 
 

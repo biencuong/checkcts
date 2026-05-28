@@ -8,79 +8,71 @@
 </head>
 <body>
   <header>
-    <h1>CheckCTS — Kiểm tra chữ ký số</h1>
-    <p class="sub">Kiểm tra file PDF đã ký &amp; chứng thư trong USB token đang cắm</p>
+    <h1>CÔNG CỤ KIỂM TRA HIỆU LỰC CKS</h1>
+    <p class="sub">Kiểm tra chữ ký số trên file PDF &amp; chứng thư trong USB token</p>
   </header>
+  <div class="disclaimer">
+    <b>Lưu ý:</b> Thông tin kiểm tra chỉ dùng cho mục đích <b>rà soát thông tin chữ ký số của người dùng</b>.
+    Tuyệt đối <b>KHÔNG</b> thu thập thông tin cá nhân, số serial,... và gửi/chia sẻ trái quy định.
+  </div>
 
   <main>
-    <!-- HƯỚNG DẪN -->
-    <section class="card guide">
-      <h2>Hướng dẫn sử dụng</h2>
+    <section class="banner">⚠ <b>Từ 01/7/2025:</b> áp dụng chính quyền 2 cấp (tỉnh – xã), <b>bỏ cấp Huyện</b>; <b>tỉnh Hà Giang đã sáp nhập vào tỉnh Tuyên Quang</b>. Chứng thư còn ghi “tỉnh Hà Giang” hoặc “Huyện” sẽ bị <b>cảnh báo</b>.</section>
 
-      <h3>Cách 1 — Ký tài liệu bằng chữ ký số rồi đẩy lên web để kiểm tra</h3>
-      <ol>
-        <li>Mở tài liệu cần ký (file <b>PDF</b>) bằng phần mềm ký số bạn đang dùng (VGCA SignService, Foxit, iText, phần mềm CKS của đơn vị…).</li>
-        <li>Cắm <b>USB token</b>, chọn chứng thư của bạn và <b>ký lên file PDF</b>, lưu lại file đã ký.</li>
-        <li>Tại mục <b>“1. Kiểm tra file PDF đã ký”</b> bên dưới, <b>kéo–thả</b> (hoặc bấm chọn) file PDF đã ký vào.</li>
-        <li>Web hiển thị: người/tổ chức ký, <b>đơn vị (OU)</b>, <b>cơ quan chủ quản (O)</b>, số serial, hạn hiệu lực, <b>tính toàn vẹn</b>, dấu thời gian (TSA).</li>
-        <li>Bấm <b>“Xuất Excel / PDF”</b> ở mục 3 để lưu biên bản kiểm tra.</li>
-      </ol>
+    <p class="intro">Có <b>2 cách</b> kiểm tra hiệu lực chữ ký số — chọn cách phù hợp. <b>Cả hai đều xuất được báo cáo</b> (Excel/PDF).</p>
 
-      <h3>Cách 2 — Kiểm tra bằng công cụ tải về (đọc trực tiếp USB token)</h3>
-      <ol>
-        <li>Tại mục <b>“2. Đọc USB token”</b>, bấm <b>“Tải CheckCTS-Agent.exe”</b> (đọc token ngay trên web) hoặc <b>“Bản offline đầy đủ (.exe)”</b>.</li>
-        <li><b>Chạy file</b> vừa tải (không cần cài đặt):
-          <br>• <i>Agent:</i> để cửa sổ “Đang chạy” mở, quay lại web bấm <b>“Dò &amp; đọc token”</b>.
-          <br>• <i>Bản offline:</i> mở giao diện, chọn PDF hoặc bấm “Đọc token”, xem kết quả và <b>“Lưu ra .txt”</b>.</li>
-        <li>Xem thông tin các chứng thư trong token (tên, đơn vị, cơ quan chủ quản, hạn).</li>
-      </ol>
-
-      <div class="note">
-        <b>Lưu ý về đơn vị hành chính (từ 01/7/2025):</b> Cả nước áp dụng <b>chính quyền 2 cấp</b> (tỉnh – xã),
-        <b>bỏ cấp Huyện</b>; <b>tỉnh Hà Giang đã sáp nhập vào tỉnh Tuyên Quang</b>. Vì vậy nếu chứng thư còn ghi
-        <b>“tỉnh Hà Giang”</b> hoặc có cấp <b>“Huyện”</b> thì thông tin đơn vị đó <b>không còn phù hợp</b> — công cụ sẽ tự
-        <b>cảnh báo</b> ở từng chứng thư.
-      </div>
-    </section>
-
-    <!-- PHẦN 1: PDF -->
-    <section class="card">
-      <h2>1. Kiểm tra file PDF đã ký</h2>
-      <div id="drop" class="drop">
-        <input type="file" id="pdfInput" accept="application/pdf" hidden />
-        <p>Kéo-thả file PDF vào đây hoặc <button id="pickBtn" class="link">chọn file</button></p>
-        <p id="pdfName" class="muted"></p>
-      </div>
-      <div id="pdfResult" class="result"></div>
-    </section>
-
-    <!-- PHẦN 2: TOKEN -->
-    <section class="card">
-      <h2>2. Đọc USB token đang cắm</h2>
-      <p class="muted">Ưu tiên đọc qua <b>CheckCTS Agent</b> (chạy local, không cần plugin hãng); nếu không có sẽ thử plugin VGCA/VNPT/Viettel.</p>
-      <button id="tokenBtn" class="btn">Dò &amp; đọc token</button>
-      <span id="tokenStatus" class="muted"></span>
-      <div id="tokenResult" class="result"></div>
-
-      <div class="fallback">
-        <strong>Cách đọc token trên web (khuyến nghị):</strong>
-        <ol class="muted" style="margin:6px 0 6px 18px; padding:0">
-          <li>Tải <b>CheckCTS-Agent.exe</b> về (chạy ngay, không cần cài).</li>
-          <li>Chạy file đó — một cửa sổ nhỏ báo "Đang chạy", cứ để mở.</li>
-          <li>Quay lại trang này bấm "Dò &amp; đọc token".</li>
+    <div class="layout">
+      <!-- CÁCH 1: KIỂM TRA QUA FILE PDF -->
+      <div class="guide">
+        <span class="method">Cách 1</span>
+        <h3>Kiểm tra qua FILE PDF đã ký</h3>
+        <ol>
+          <li>Ký file <b>PDF</b> bằng phần mềm ký số của bạn (VGCA, Foxit, CKS đơn vị…).</li>
+          <li><b>Kéo–thả</b> một hoặc nhiều file PDF đã ký vào ô bên phải.</li>
+          <li>Xem kết quả rồi <b>xuất báo cáo</b>.</li>
         </ol>
-        <a class="btn" href="https://github.com/biencuong/checkcts/releases/latest/download/CheckCTS-Agent.exe">Tải CheckCTS-Agent.exe</a>
-        <a class="btn btn-outline" href="https://github.com/biencuong/checkcts/releases/latest/download/CheckCTS.exe">Bản offline đầy đủ (.exe)</a>
+        <p class="hint">Dùng được cho cả <b>CKS USB</b> lẫn <b>CKS tập trung</b> (cloud — VNPT SmartCA, MISA eSign… không có USB).</p>
       </div>
-    </section>
+      <section class="card">
+        <h2>Cách 1 — Kiểm tra file PDF đã ký</h2>
+        <div id="drop" class="drop">
+          <input type="file" id="pdfInput" accept="application/pdf" multiple hidden />
+          <p>Kéo-thả <b>một hoặc nhiều</b> file PDF vào đây hoặc <button id="pickBtn" class="link">chọn file</button></p>
+          <p id="pdfName" class="muted"></p>
+        </div>
+        <div id="pdfResult" class="result"></div>
+        <div class="exportbar"><span class="muted">Xuất báo cáo Cách 1:</span>
+          <button class="btn btn-outline expbtn" data-src="pdf" data-kind="excel">Excel</button>
+          <button class="btn btn-outline expbtn" data-src="pdf" data-kind="pdf">PDF</button>
+        </div>
+      </section>
 
-    <!-- XUẤT BÁO CÁO -->
-    <section class="card">
-      <h2>3. Xuất báo cáo</h2>
-      <button id="xlsxBtn" class="btn btn-outline">Xuất Excel (.xlsx)</button>
-      <button id="pdfBtn" class="btn btn-outline">Xuất PDF</button>
-      <span class="muted">Gộp kết quả PDF + token đã kiểm tra ở trên.</span>
-    </section>
+      <!-- CÁCH 2: KIỂM TRA QUA USB TOKEN -->
+      <div class="guide">
+        <span class="method">Cách 2</span>
+        <h3>Kiểm tra qua USB TOKEN</h3>
+        <ol>
+          <li>Tải &amp; chạy <b>CheckCTS-Agent.exe</b>, để cửa sổ "Đang chạy" mở.</li>
+          <li>Cắm token, bấm <b>"Dò &amp; đọc token"</b>.</li>
+          <li>Xem chứng thư đang dùng rồi <b>xuất báo cáo</b>.</li>
+        </ol>
+        <p class="hint">Trình duyệt không đọc trực tiếp token — Agent chạy nền làm cầu nối. Hoặc dùng <b>CheckCTS.exe</b> (phần mềm độc lập, lưu .txt).</p>
+      </div>
+      <section class="card">
+        <h2>Cách 2 — Kiểm tra USB token</h2>
+        <div class="dlrow">
+          <a class="btn" href="https://github.com/biencuong/checkcts/releases/latest/download/CheckCTS-Agent.exe">⬇ CheckCTS-Agent.exe</a>
+          <a class="btn btn-outline" href="https://github.com/biencuong/checkcts/releases/latest/download/CheckCTS.exe">⬇ CheckCTS.exe (độc lập)</a>
+        </div>
+        <button id="tokenBtn" class="btn">Dò &amp; đọc token</button>
+        <span id="tokenStatus" class="muted"></span>
+        <div id="tokenResult" class="result"></div>
+        <div class="exportbar"><span class="muted">Xuất báo cáo Cách 2:</span>
+          <button class="btn btn-outline expbtn" data-src="token" data-kind="excel">Excel</button>
+          <button class="btn btn-outline expbtn" data-src="token" data-kind="pdf">PDF</button>
+        </div>
+      </section>
+    </div>
   </main>
 
   <script src="plugins.js"></script>

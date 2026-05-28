@@ -32,29 +32,41 @@ function adminWarn(...fields) {
 }
 
 function flattenRows(data) {
-  // data = { pdf: {signatures:[...]}, token: {certs:[...]} }
+  // data = { pdfFiles: [{fileName, signatures:[...]}], token: {certs:[...]} }
+  // Lọc trùng theo số serial (mỗi chứng thư chỉ xuất 1 dòng).
   const rows = [];
-  if (data.pdf && data.pdf.signatures) {
-    data.pdf.signatures.forEach((s) => {
-      rows.push({
-        nguon: 'PDF - Chữ ký #' + s.index,
-        cn: s.signer ? s.signer.commonName : '',
-        donVi: s.signer ? s.signer.orgUnit || '' : '',
-        chuQuan: s.signer ? s.signer.org || '' : '',
-        serial: s.signer ? s.signer.serialNumber || '' : '',
-        hieuLuc: s.signer ? `${fmtDate(s.signer.notBefore)} - ${fmtDate(s.signer.notAfter)}` : '',
-        trangThai: s.signer ? s.signer.status : '',
+  const seen = new Set();
+  const pushUnique = (row) => {
+    const key = (row.serial || '').toUpperCase() || row.nguon + '|' + row.cn;
+    if (seen.has(key)) return;
+    seen.add(key);
+    rows.push(row);
+  };
+
+  const pdfFiles = data.pdfFiles || (data.pdf ? [{ fileName: '', signatures: data.pdf.signatures }] : []);
+  pdfFiles.forEach((f) => {
+    (f.signatures || []).forEach((s) => {
+      const g = s.signer || {};
+      pushUnique({
+        nguon: 'PDF' + (f.fileName ? ' - ' + f.fileName : '') + ' - Chữ ký #' + s.index,
+        cn: g.commonName || '',
+        donVi: g.orgUnit || '',
+        chuQuan: g.org || '',
+        serial: g.serialNumber || '',
+        hieuLuc: g.notBefore ? `${fmtDate(g.notBefore)} - ${fmtDate(g.notAfter)}` : '',
+        trangThai: g.status || '',
         toanVen: s.intact ? 'Hợp lệ' : 'KHÔNG hợp lệ',
         ghiChu: [
           (s.coverage === 'ENTIRE_FILE' ? 'Phủ toàn bộ file' : 'Phủ revision') + (s.hasTimestamp ? '; có TSA' : ''),
-          s.signer ? adminWarn(s.signer.commonName, s.signer.org, s.signer.orgUnit, s.signer.locality) : '',
+          adminWarn(g.commonName, g.org, g.orgUnit, g.locality),
         ].filter(Boolean).join(' | '),
       });
     });
-  }
+  });
+
   if (data.token && data.token.certs) {
     data.token.certs.forEach((c, i) => {
-      rows.push({
+      pushUnique({
         nguon: 'Token - Chứng thư #' + (i + 1),
         cn: c.commonName || '',
         donVi: c.orgUnit || '',

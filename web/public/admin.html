@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CheckCTS — Lịch sử nội bộ</title>
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="robots" content="noindex,nofollow" />
+</head>
+<body>
+  <header><h1>Lịch sử CKS đã kiểm tra (nội bộ)</h1>
+    <p class="sub">Chỉ dùng nội bộ theo dõi/rà soát — không công khai</p>
+  </header>
+  <div class="disclaimer"><b>Bảo mật:</b> Dữ liệu chỉ phục vụ rà soát CKS ngành giáo dục. Nghiêm cấm sao chép/chia sẻ thông tin cá nhân trái quy định.</div>
+
+  <main>
+    <section class="card">
+      <h2>Đăng nhập nội bộ</h2>
+      <input id="key" type="password" placeholder="Khóa truy cập nội bộ" style="padding:8px;border:1px solid #cbd5e1;border-radius:8px;width:260px" />
+      <button id="loadBtn" class="btn">Xem lịch sử</button>
+      <a id="expBtn" class="btn btn-outline" href="#">Xuất Excel</a>
+      <span id="status" class="muted"></span>
+    </section>
+    <section class="card">
+      <div id="result" class="result"><span class="muted">Nhập khóa rồi bấm "Xem lịch sử".</span></div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const fmt = (iso) => { try { return new Date(iso).toLocaleString('vi-VN'); } catch (_) { return iso || ''; } };
+
+    function adminWarn(c) {
+      const t = [c.commonName, c.org, c.orgUnit, c.locality].filter(Boolean).join(' ').toUpperCase();
+      const w = [];
+      if (t.includes('HÀ GIANG')) w.push('Hà Giang đã sáp nhập');
+      if (/HUYỆN/.test(t)) w.push('còn cấp Huyện');
+      return w.join('; ');
+    }
+
+    $('loadBtn').onclick = async () => {
+      const key = $('key').value.trim();
+      $('status').textContent = ' Đang tải...';
+      try {
+        const r = await fetch('/api/history?key=' + encodeURIComponent(key));
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Lỗi');
+        $('status').textContent = ` ${d.count} chứng thư`;
+        $('expBtn').setAttribute('href', '/api/history/export?key=' + encodeURIComponent(key));
+        renderTable(d.certs);
+      } catch (e) {
+        $('status').textContent = '';
+        $('result').innerHTML = `<div class="error">${esc(e.message)}</div>`;
+      }
+    };
+
+    function renderTable(certs) {
+      if (!certs.length) { $('result').innerHTML = '<span class="muted">Chưa có dữ liệu.</span>'; return; }
+      let h = `<table class="histtable"><thead><tr>
+        <th>CN</th><th>Đơn vị (OU)</th><th>Chủ quản (O)</th><th>Serial</th>
+        <th>Hết hạn</th><th>Nguồn</th><th>Số lần</th><th>Cảnh báo</th></tr></thead><tbody>`;
+      certs.forEach((c) => {
+        const expired = c.notAfter && new Date(c.notAfter) < new Date();
+        const warn = adminWarn(c);
+        h += `<tr class="${expired || warn ? 'rowwarn' : ''}">
+          <td>${esc(c.commonName)}</td><td>${esc(c.orgUnit)}</td><td>${esc(c.org)}</td>
+          <td>${esc(c.serial)}</td><td>${fmt(c.notAfter)}${expired ? ' <b>(hết hạn)</b>' : ''}</td>
+          <td>${esc(c.source)}</td><td>${c.checkCount}</td><td>${esc(warn)}</td></tr>`;
+      });
+      h += '</tbody></table>';
+      $('result').innerHTML = h;
+    }
+  </script>
+  <style>
+    .histtable { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .histtable th, .histtable td { border: 1px solid #e5e7eb; padding: 5px 7px; text-align: left; }
+    .histtable th { background: #eef2ff; }
+    .histtable tr.rowwarn { background: #fff7ed; }
+  </style>
+</body>
+</html>
