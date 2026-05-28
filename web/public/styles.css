@@ -46,6 +46,9 @@ main { max-width: 980px; margin: 20px auto; padding: 0 16px; }
 .fallback { margin-top: 16px; padding: 14px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; }
 .fallback a { margin-top: 8px; display: inline-block; }
 .error { color: #991b1b; background: #fee2e2; padding: 10px 12px; border-radius: 8px; }
+.rolebadge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+.rolebadge.role-ca { background: #e5e7eb; color: #374151; }
+.rolebadge.role-me { background: #dcfce7; color: #166534; }
 .adminwarn { margin-top: 10px; padding: 10px 12px; background: #fff7ed; border: 1px solid #fdba74; border-left: 4px solid #ea580c; border-radius: 8px; color: #9a3412; font-size: 13.5px; }
 .adminwarn ul { margin: 6px 0 0 18px; padding: 0; }
 .guide { background: #eff6ff; border: 1px solid #bfdbfe; }

@@ -123,15 +123,27 @@
     }
   }
 
+  // Xác định vai trò mỗi chứng thư trong chuỗi tin cậy
+  function certRole(c, all) {
+    const cn = (c.commonName || '').trim();
+    const iss = (c.issuerCN || '').trim();
+    if (cn && cn === iss) return { label: 'CA gốc', cls: 'role-ca' };
+    if (all.some((x) => x !== c && (x.issuerCN || '').trim() === cn))
+      return { label: 'CA trung gian', cls: 'role-ca' };
+    return { label: '★ Chứng thư của bạn (dùng để ký)', cls: 'role-me' };
+  }
+
   function renderToken(t) {
     if (!t.certs.length) {
       $('tokenResult').innerHTML = '<div class="error">Không đọc được chứng thư nào từ token.</div>';
       return;
     }
-    let html = `<p class="muted">Plugin: <b>${esc(t.plugin)}</b> — ${t.certs.length} chứng thư</p>`;
+    let html = `<p class="muted">Plugin: <b>${esc(t.plugin)}</b> — ${t.certs.length} chứng thư
+      (gồm chứng thư của bạn + các CA đi kèm để tạo chuỗi tin cậy)</p>`;
     t.certs.forEach((c, i) => {
+      const role = certRole(c, t.certs);
       html += `<div class="sig">
-        <h3>Chứng thư #${i + 1}</h3>
+        <h3>Chứng thư #${i + 1} <span class="rolebadge ${role.cls}">${esc(role.label)}</span></h3>
         <table>
           ${row('Người/Tổ chức (CN)', c.commonName)}
           ${row('Đơn vị (OU)', c.orgUnit)}
