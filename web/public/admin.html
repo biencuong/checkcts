@@ -3,34 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CheckCTS — Lịch sử nội bộ</title>
+  <title>CheckCTS — Đăng nhập nội bộ</title>
   <link rel="stylesheet" href="styles.css" />
   <meta name="robots" content="noindex,nofollow" />
   <style>
-    main { max-width: none; }
-    .loginrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .loginrow input { padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; width: 260px; font-size: 14px; }
-    .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
-    .search { flex: 1 1 360px; min-width: 220px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 9px; font-size: 14px; }
-    .toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .summary { margin: 4px 2px 10px; font-size: 13px; }
-    .summary b { color: var(--ink); }
-    .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
-    .histtable { border: 0; }
-    .histtable th { cursor: pointer; white-space: nowrap; user-select: none; }
-    .histtable th:hover { background: var(--coral-sft); }
-    .histtable th .arr { color: var(--coral); font-weight: 700; margin-left: 3px; }
-    .histtable td { white-space: nowrap; max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
-    .histtable td.wrap { white-space: normal; }
-    .pager { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
-    .pager button { border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 8px; padding: 6px 11px; cursor: pointer; font-size: 13px; min-width: 36px; }
-    .pager button:hover:not(:disabled):not(.active) { background: var(--coral-sft); }
-    .pager button.active { background: var(--coral); color: #fff; border-color: var(--coral); cursor: default; }
-    .pager button:disabled { opacity: .4; cursor: default; }
-    .pager .pinfo { color: var(--muted); font-size: 13px; margin: 0 6px; }
-    .pager .pjump { width: 58px; padding: 5px 7px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; text-align: center; }
-    .btn.danger { color: var(--bad-fg); border-color: #E3B4AA; }
-    .btn.danger:hover { background: var(--bad-bg); }
+    .login { max-width: 440px; margin: 48px auto; }
+    .login .card { text-align: center; padding: 30px 28px; }
+    .login h2 { margin: 0 0 6px; }
+    .login p.note { margin: 0 0 18px; font-size: 13.5px; color: var(--muted); }
+    .login input { width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 9px; font-size: 15px; margin-bottom: 12px; }
+    .login .btn { width: 100%; padding: 11px; font-size: 15px; }
+    .login .error { margin-top: 12px; }
   </style>
 </head>
 <body>
@@ -39,35 +22,13 @@
   </header>
   <div class="disclaimer"><b>Bảo mật:</b> Dữ liệu chỉ phục vụ rà soát CKS ngành giáo dục. Nghiêm cấm sao chép/chia sẻ thông tin cá nhân trái quy định.</div>
 
-  <main>
+  <main class="login">
     <section class="card">
       <h2>Đăng nhập nội bộ</h2>
-      <div class="loginrow">
-        <input id="key" type="password" placeholder="Khóa truy cập nội bộ" />
-        <button id="loadBtn" class="btn">Xem lịch sử</button>
-        <span id="status" class="muted"></span>
-      </div>
-    </section>
-
-    <section class="card" id="panel" style="display:none">
-      <div class="toolbar">
-        <input id="q" class="search" placeholder="Tìm kiếm thông minh: tên, đơn vị, cơ quan, serial, email, CA… (không phân biệt dấu; cách nhau bằng dấu cách = lọc tất cả từ khóa)" />
-        <div class="toolbar-actions">
-          <button id="clearBtn" class="btn btn-outline">Xóa lọc</button>
-          <button id="csvBtn" class="btn btn-outline">Tải CSV (kết quả lọc)</button>
-          <a id="expBtn" class="btn btn-outline" href="#">Xuất Excel (tất cả)</a>
-          <button id="purgeBtn" class="btn btn-outline danger" title="Xóa toàn bộ lịch sử đã lưu (không hoàn tác)">Xóa toàn bộ</button>
-        </div>
-      </div>
-
-      <div id="summary" class="summary muted"></div>
-      <div class="tablewrap">
-        <table class="histtable" id="tbl">
-          <thead><tr id="head"></tr></thead>
-          <tbody id="body"></tbody>
-        </table>
-      </div>
-      <div id="pager" class="pager"></div>
+      <p class="note">Nhập khóa truy cập để xem bảng lịch sử chứng thư số.</p>
+      <input id="key" type="password" placeholder="Khóa truy cập nội bộ" autofocus />
+      <button id="loginBtn" class="btn">Đăng nhập</button>
+      <div id="err" class="error" style="display:none"></div>
     </section>
   </main>
 
@@ -75,241 +36,30 @@
 
   <script>
     const $ = (id) => document.getElementById(id);
-    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    const fmtDateTime = (iso) => { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? esc(iso) : d.toLocaleString('vi-VN'); };
-    const fmtDate = (iso) => { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? esc(iso) : d.toLocaleDateString('vi-VN'); };
+    // Đã đăng nhập rồi -> vào thẳng bảng
+    if (sessionStorage.getItem('cks_key')) location.replace('bang.html');
 
-    // Bỏ dấu tiếng Việt + thường hóa -> tìm kiếm thông minh không phân biệt dấu/hoa thường
-    const norm = (s) => String(s == null ? '' : s)
-      .normalize('NFD').replace(/\p{Diacritic}/gu, '')
-      .replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().trim();
-
-    const PAGE_SIZE = 50;
-    const SEARCH_FIELDS = ['commonName', 'orgUnit', 'org', 'locality', 'email', 'issuerCN', 'serial', 'source'];
-
-    const COLS = [
-      { key: '_idx', label: '#', type: 'idx' },
-      { key: 'commonName', label: 'Người/Tổ chức (CN)', type: 'text', wrap: true },
-      { key: 'orgUnit', label: 'Đơn vị (OU)', type: 'text', wrap: true },
-      { key: 'org', label: 'Cơ quan chủ quản (O)', type: 'text', wrap: true },
-      { key: 'locality', label: 'Địa phương (L)', type: 'text' },
-      { key: 'email', label: 'Email', type: 'text' },
-      { key: 'serial', label: 'Số serial', type: 'text' },
-      { key: 'notBefore', label: 'Hiệu lực từ', type: 'date' },
-      { key: 'notAfter', label: 'Hết hạn', type: 'date' },
-      { key: '_status', label: 'Trạng thái', type: 'status' },
-      { key: 'issuerCN', label: 'Nhà phát hành (CA)', type: 'text', wrap: true },
-      { key: 'source', label: 'Nguồn', type: 'text' },
-      { key: 'checkCount', label: 'Số lần', type: 'num' },
-      { key: 'firstSeen', label: 'Lần đầu', type: 'datetime' },
-      { key: 'lastSeen', label: 'Lần cuối', type: 'datetime' },
-      { key: '_warn', label: 'Cảnh báo đơn vị', type: 'warn', wrap: true },
-    ];
-
-    const STATUS_RANK = { 'Còn hiệu lực': 1, 'Sắp hết hạn': 2, 'Chưa hiệu lực': 3, 'Đã hết hạn': 4, 'Không rõ': 5 };
-
-    const state = { all: [], filtered: [], page: 1, sortKey: 'lastSeen', sortDir: -1 };
-
-    function computeStatus(c) {
-      if (!c.notBefore || !c.notAfter) return 'Không rõ';
-      const now = Date.now();
-      const nb = new Date(c.notBefore).getTime();
-      const na = new Date(c.notAfter).getTime();
-      if (isNaN(nb) || isNaN(na)) return 'Không rõ';
-      if (now < nb) return 'Chưa hiệu lực';
-      if (now > na) return 'Đã hết hạn';
-      if (na - now <= 30 * 86400000) return 'Sắp hết hạn';
-      return 'Còn hiệu lực';
-    }
-    function statusBadge(st) {
-      const cls = st === 'Còn hiệu lực' ? 'ok' : st === 'Đã hết hạn' ? 'bad' : st === 'Không rõ' ? '' : 'warn';
-      return `<span class="badge ${cls}">${esc(st)}</span>`;
-    }
-    function adminWarn(c) {
-      const t = norm([c.commonName, c.org, c.orgUnit, c.locality].filter(Boolean).join(' '));
-      const w = [];
-      if (t.includes('ha giang')) w.push('Hà Giang đã sáp nhập vào Tuyên Quang');
-      if (t.includes('huyen')) w.push('Không còn cấp Huyện');
-      return w.join('; ');
-    }
-
-    // Tiền xử lý mỗi dòng: trạng thái, cảnh báo, chuỗi tìm kiếm đã chuẩn hóa
-    function decorate(certs) {
-      return certs.map((c, i) => {
-        const _status = computeStatus(c);
-        const _warn = adminWarn(c);
-        // Ô tìm kiếm thông minh phủ: họ tên, đơn vị, chủ quản, serial, email, CA, nguồn,
-        // + hết hạn (ngày), cảnh báo và trạng thái.
-        const _search = norm(SEARCH_FIELDS.map((f) => c[f]).filter(Boolean).join(' ')
-          + ' ' + fmtDate(c.notBefore) + ' ' + fmtDate(c.notAfter) + ' ' + _warn + ' ' + _status);
-        return Object.assign({}, c, { _idx0: i, _status, _warn, _search });
-      });
-    }
-
-    $('loadBtn').onclick = load;
-    $('key').addEventListener('keydown', (e) => { if (e.key === 'Enter') load(); });
-
-    async function load() {
+    async function login() {
       const key = $('key').value.trim();
-      $('status').innerHTML = ' <span class="spinner"></span>';
+      $('err').style.display = 'none';
+      if (!key) { $('err').textContent = 'Vui lòng nhập khóa.'; $('err').style.display = ''; return; }
+      $('loginBtn').disabled = true;
+      $('loginBtn').innerHTML = ' <span class="spinner"></span> Đang kiểm tra...';
       try {
         const r = await fetch('/api/history?key=' + encodeURIComponent(key));
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || 'Lỗi');
-        state.all = decorate(d.certs || []);
-        $('status').textContent = ` Tổng ${state.all.length} chứng thư`;
-        $('expBtn').setAttribute('href', '/api/history/export?key=' + encodeURIComponent(key));
-        $('panel').style.display = '';
-        buildHead();
-        state.page = 1;
-        apply();
+        if (r.status === 403) throw new Error('Khóa truy cập không đúng.');
+        if (!r.ok) throw new Error('Lỗi máy chủ, thử lại sau.');
+        sessionStorage.setItem('cks_key', key);   // ghi nhớ trong phiên trình duyệt
+        location.href = 'bang.html';
       } catch (e) {
-        $('status').textContent = '';
-        $('panel').style.display = 'none';
-        alert('Không tải được: ' + e.message);
+        $('err').textContent = e.message;
+        $('err').style.display = '';
+        $('loginBtn').disabled = false;
+        $('loginBtn').textContent = 'Đăng nhập';
       }
     }
-
-    function buildHead() {
-      $('head').innerHTML = COLS.map((col) => {
-        const arr = state.sortKey === col.key ? `<span class="arr">${state.sortDir === 1 ? '▲' : '▼'}</span>` : '';
-        return `<th data-key="${col.key}">${esc(col.label)}${arr}</th>`;
-      }).join('');
-      $('head').querySelectorAll('th').forEach((th) => {
-        th.onclick = () => {
-          const k = th.getAttribute('data-key');
-          if (state.sortKey === k) state.sortDir *= -1; else { state.sortKey = k; state.sortDir = 1; }
-          buildHead(); apply();
-        };
-      });
-    }
-
-    // ---- Tìm kiếm + sắp xếp ----
-    function apply() {
-      // 1 ô tìm kiếm thông minh: nhiều từ khóa cách nhau bằng dấu cách = lọc AND trên mọi trường
-      const terms = norm($('q').value).split(/\s+/).filter(Boolean);
-      let rows = state.all.filter((c) => terms.length === 0 || terms.every((t) => c._search.includes(t)));
-
-      const key = state.sortKey, dir = state.sortDir;
-      const col = COLS.find((x) => x.key === key) || {};
-      rows.sort((a, b) => {
-        let x, y;
-        if (key === '_idx') { x = a._idx0; y = b._idx0; }
-        else if (key === '_status') { x = STATUS_RANK[a._status] || 9; y = STATUS_RANK[b._status] || 9; }
-        else if (col.type === 'num') { x = +a[key] || 0; y = +b[key] || 0; }
-        else if (col.type === 'date' || col.type === 'datetime') { x = a[key] ? new Date(a[key]).getTime() || 0 : 0; y = b[key] ? new Date(b[key]).getTime() || 0 : 0; }
-        else { x = norm(a[key === '_warn' ? '_warn' : key]); y = norm(b[key === '_warn' ? '_warn' : key]); }
-        if (x < y) return -1 * dir; if (x > y) return 1 * dir; return 0;
-      });
-
-      state.filtered = rows;
-      const maxPage = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-      if (state.page > maxPage) state.page = maxPage;
-      render();
-    }
-
-    function cellHtml(col, c, idxInPage) {
-      switch (col.type) {
-        case 'idx': return String((state.page - 1) * PAGE_SIZE + idxInPage + 1);
-        case 'status': return statusBadge(c._status);
-        case 'warn': return c._warn ? `<span class="badge warn">${esc(c._warn)}</span>` : '';
-        case 'num': return esc(c[col.key] == null ? '' : c[col.key]);
-        case 'date': return fmtDate(c[col.key]);
-        case 'datetime': return fmtDateTime(c[col.key]);
-        default: return esc(c[col.key]);
-      }
-    }
-
-    function render() {
-      const rows = state.filtered;
-      const total = state.all.length, n = rows.length;
-      const start = (state.page - 1) * PAGE_SIZE;
-      const pageRows = rows.slice(start, start + PAGE_SIZE);
-
-      $('summary').innerHTML = n
-        ? `Hiển thị <b>${start + 1}–${start + pageRows.length}</b> / <b>${n}</b> kết quả` + (n !== total ? ` (lọc từ ${total})` : '') + ` · 50 dòng/trang`
-        : `Không có kết quả phù hợp` + (total ? ` (tổng ${total})` : '');
-
-      $('body').innerHTML = pageRows.map((c) => '<tr' + ((c._status === 'Đã hết hạn' || c._warn) ? ' class="rowwarn"' : '') + '>'
-        + COLS.map((col) => `<td class="${col.wrap ? 'wrap' : ''}" title="${esc(col.type === 'idx' ? '' : (col.key.startsWith('_') ? (col.key === '_status' ? c._status : c._warn) : (c[col.key] || '')))}">${cellHtml(col, c, pageRows.indexOf(c))}</td>`).join('')
-        + '</tr>').join('') || `<tr><td colspan="${COLS.length}" style="text-align:center;color:var(--muted);padding:18px">Không có dữ liệu</td></tr>`;
-
-      renderPager(Math.max(1, Math.ceil(n / PAGE_SIZE)));
-    }
-
-    function renderPager(maxPage) {
-      const p = state.page;
-      const go = (np) => { state.page = Math.min(maxPage, Math.max(1, np)); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-      const btn = (label, target, opt) => {
-        const b = document.createElement('button');
-        b.innerHTML = label;
-        if (opt && opt.active) b.className = 'active';
-        if (opt && opt.disabled) b.disabled = true; else b.onclick = () => go(target);
-        return b;
-      };
-      const pager = $('pager'); pager.innerHTML = '';
-      if (maxPage <= 1) { pager.appendChild(Object.assign(document.createElement('span'), { className: 'pinfo', textContent: `Trang 1/1` })); return; }
-      pager.appendChild(btn('«', 1, { disabled: p === 1 }));
-      pager.appendChild(btn('‹', p - 1, { disabled: p === 1 }));
-      // cửa sổ số trang quanh trang hiện tại
-      let s = Math.max(1, p - 2), e = Math.min(maxPage, p + 2);
-      if (p <= 3) e = Math.min(maxPage, 5);
-      if (p >= maxPage - 2) s = Math.max(1, maxPage - 4);
-      if (s > 1) { pager.appendChild(btn('1', 1, {})); if (s > 2) pager.appendChild(Object.assign(document.createElement('span'), { className: 'pinfo', textContent: '…' })); }
-      for (let i = s; i <= e; i++) pager.appendChild(btn(String(i), i, { active: i === p }));
-      if (e < maxPage) { if (e < maxPage - 1) pager.appendChild(Object.assign(document.createElement('span'), { className: 'pinfo', textContent: '…' })); pager.appendChild(btn(String(maxPage), maxPage, {})); }
-      pager.appendChild(btn('›', p + 1, { disabled: p === maxPage }));
-      pager.appendChild(btn('»', maxPage, { disabled: p === maxPage }));
-      pager.appendChild(Object.assign(document.createElement('span'), { className: 'pinfo', textContent: `Trang ${p}/${maxPage} ·` }));
-      pager.appendChild(Object.assign(document.createElement('span'), { className: 'pinfo', textContent: 'Tới trang' }));
-      const jump = document.createElement('input');
-      jump.type = 'number'; jump.min = 1; jump.max = maxPage; jump.value = p; jump.className = 'pjump'; jump.title = 'Nhập số trang rồi Enter';
-      jump.onkeydown = (e) => { if (e.key === 'Enter') go(+jump.value || 1); };
-      jump.onchange = () => go(+jump.value || 1);
-      pager.appendChild(jump);
-    }
-
-    // ---- Sự kiện lọc (debounce cho ô text) ----
-    let t;
-    const onFilter = () => { clearTimeout(t); t = setTimeout(() => { state.page = 1; apply(); }, 200); };
-    $('q').addEventListener('input', onFilter);
-
-    $('clearBtn').onclick = () => { $('q').value = ''; state.page = 1; apply(); };
-
-    // Xóa toàn bộ lịch sử (dọn dữ liệu test) — cần khóa, có xác nhận
-    $('purgeBtn').onclick = async () => {
-      const key = $('key').value.trim();
-      if (!confirm('Xóa TOÀN BỘ lịch sử CKS đã lưu? Hành động KHÔNG hoàn tác.')) return;
-      try {
-        const r = await fetch('/api/history?key=' + encodeURIComponent(key), { method: 'DELETE' });
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || 'Lỗi');
-        alert('Đã xóa ' + (d.deleted || 0) + ' chứng thư.');
-        load();
-      } catch (e) { alert('Không xóa được: ' + e.message); }
-    };
-
-    // ---- Xuất CSV theo kết quả đang lọc ----
-    $('csvBtn').onclick = () => {
-      const rows = state.filtered;
-      if (!rows.length) { alert('Không có dữ liệu để xuất.'); return; }
-      const cols = COLS.filter((c) => c.type !== 'idx');
-      const head = cols.map((c) => c.label.replace(/\s*\(.*?\)\s*/g, '').trim());
-      const cell = (col, c) => {
-        if (col.type === 'status') return c._status;
-        if (col.type === 'warn') return c._warn;
-        if (col.type === 'date') return fmtDate(c[col.key]);
-        if (col.type === 'datetime') return fmtDateTime(c[col.key]);
-        return c[col.key] == null ? '' : String(c[col.key]);
-      };
-      const q = (v) => '"' + String(v).replace(/"/g, '""') + '"';
-      const lines = [head.map(q).join(',')].concat(rows.map((c) => cols.map((col) => q(cell(col, c))).join(',')));
-      const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'CheckCTS_lichsu_loc_' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '') + '.csv';
-      a.click(); URL.revokeObjectURL(a.href);
-    };
+    $('loginBtn').onclick = login;
+    $('key').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
   </script>
 </body>
 </html>
