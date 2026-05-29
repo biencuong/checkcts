@@ -79,20 +79,40 @@
     if (!state.pdfFiles.length) { $('pdfResult').innerHTML = ''; return; }
     let html = '';
     state.pdfFiles.forEach((data) => {
-      html += `<div class="filegroup"><div class="filehead">📄 ${esc(data.fileName)}
-        ${data.error ? '<span class="badge bad">Lỗi</span>'
-          : data.hasSignature ? `<span class="muted">(${data.count} chữ ký)</span>`
-          : '<span class="badge warn">Không có chữ ký số</span>'}</div>`;
-      if (data.error) html += `<div class="error">${esc(data.error)}</div>`;
+      // Gộp các chữ ký TRÙNG chứng thư (cùng số serial): 1 đơn vị/người ký nhiều lần -> chỉ hiện 1
+      const groups = [];
+      const idx = new Map();
       (data.signatures || []).forEach((s) => {
+        const g = s.signer || {};
+        const key = g.serialNumber || ((g.commonName || '') + '|' + (g.org || '') + '|' + (g.notAfter || ''));
+        if (idx.has(key)) {
+          const grp = groups[idx.get(key)];
+          grp.count++;
+          grp.allIntact = grp.allIntact && s.intact;
+          if (!s.intact && grp.s.intact) grp.s = s; // có lần ký KHÔNG toàn vẹn -> ưu tiên hiển thị bản đó
+        } else {
+          idx.set(key, groups.length);
+          groups.push({ s, count: 1, allIntact: s.intact });
+        }
+      });
+      const totalSigs = (data.signatures || []).length;
+      const countLabel = data.error ? '<span class="badge bad">Lỗi</span>'
+        : data.hasSignature
+          ? `<span class="muted">(${groups.length} chứng thư${groups.length !== totalSigs ? ` · ${totalSigs} lượt ký` : ''})</span>`
+          : '<span class="badge warn">Không có chữ ký số</span>';
+      html += `<div class="filegroup"><div class="filehead">📄 ${esc(data.fileName)} ${countLabel}</div>`;
+      if (data.error) html += `<div class="error">${esc(data.error)}</div>`;
+      groups.forEach((grp, gi) => {
+        const s = grp.s;
         const g = s.signer || {};
         const cover = s.coverage === 'ENTIRE_FILE' ? 'Phủ toàn bộ file' : 'Phủ phần dữ liệu của chữ ký (bình thường với PDF nhiều chữ ký)';
         const who = g.commonName ? ' — ' + esc(g.commonName) : '';
+        const lanKy = grp.count > 1 ? ` <span class="muted">(ký ${grp.count} lần)</span>` : '';
         // CTS còn "Hà Giang"/"Huyện" (đơn vị hành chính đã hết hiệu lực) -> trạng thái "HẾT HIỆU LỰC"
         const warned = adminWarnings(g).length > 0;
         const effStatus = (warned && g.status && g.status.includes('CÒN')) ? 'HẾT HIỆU LỰC' : g.status;
-        html += `<div class="sig ${s.intact ? '' : 'bad'}">
-          <h3>Chữ ký #${s.index}${who} ${badge(s.intact)}</h3>
+        html += `<div class="sig ${grp.allIntact ? '' : 'bad'}">
+          <h3>Chữ ký #${gi + 1}${who} ${badge(grp.allIntact)}${lanKy}</h3>
           <table>
             ${row('Người/Tổ chức ký (CN)', g.commonName)}
             ${row('Đơn vị (OU)', g.orgUnit)}
