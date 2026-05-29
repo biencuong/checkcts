@@ -127,11 +127,15 @@
       const cls = st === 'Còn hiệu lực' ? 'ok' : (st === 'Đã hết hạn' || st === 'Hết hiệu lực') ? 'bad' : st === 'Không rõ' ? '' : 'warn';
       return `<span class="badge ${cls}">${esc(st)}</span>`;
     }
+    // "Huyện" (cấp hành chính) phải khớp NGUYÊN TỪ + CÓ DẤU (dấu nặng ệ) để KHÔNG nhầm tên người
+    // như "Huyến", "Huyền" (bỏ dấu đều ra "huyen"). Dùng NFC cho chắc chắn về Unicode.
+    const RE_HUYEN = new RegExp('(?:^|[^\\p{L}])' + 'huyện'.normalize('NFC') + '(?:[^\\p{L}]|$)', 'iu');
     function adminWarn(c) {
-      const t = norm([c.commonName, c.org, c.orgUnit, c.locality].filter(Boolean).join(' '));
+      const raw = [c.commonName, c.org, c.orgUnit, c.locality].filter(Boolean).join(' ');
+      const t = norm(raw);
       const w = [];
       if (t.includes('ha giang')) w.push('Hà Giang đã sáp nhập vào Tuyên Quang');
-      if (t.includes('huyen')) w.push('Không còn cấp Huyện');
+      if (RE_HUYEN.test(raw.normalize('NFC'))) w.push('Không còn cấp Huyện');
       return w.join('; ');
     }
     // Phân loại cá nhân / tổ chức: tổ chức nếu KHÔNG có đơn vị (OU) hoặc CN trùng tên cơ quan (O)
