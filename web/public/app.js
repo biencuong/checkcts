@@ -81,6 +81,9 @@
         const g = s.signer || {};
         const cover = s.coverage === 'ENTIRE_FILE' ? 'Phủ toàn bộ file' : 'Phủ phần dữ liệu của chữ ký (bình thường với PDF nhiều chữ ký)';
         const who = g.commonName ? ' — ' + esc(g.commonName) : '';
+        // CTS còn "Hà Giang"/"Huyện" (đơn vị hành chính đã hết hiệu lực) -> trạng thái "HẾT HIỆU LỰC"
+        const warned = adminWarnings(g).length > 0;
+        const effStatus = (warned && g.status && g.status.includes('CÒN')) ? 'HẾT HIỆU LỰC' : g.status;
         html += `<div class="sig ${s.intact ? '' : 'bad'}">
           <h3>Chữ ký #${s.index}${who} ${badge(s.intact)}</h3>
           <table>
@@ -90,7 +93,7 @@
             ${row('Email', g.email)}
             ${row('Số serial', g.serialNumber)}
             ${row('Hiệu lực', g.notBefore ? fmt(g.notBefore) + ' → ' + fmt(g.notAfter) : '')}
-            ${rowRaw('Trạng thái', statusBadge(g.status) + (g.daysLeft != null ? ` <span class="muted">(còn ${g.daysLeft} ngày)</span>` : ''))}
+            ${rowRaw('Trạng thái', statusBadge(effStatus) + (!warned && g.daysLeft != null ? ` <span class="muted">(còn ${g.daysLeft} ngày)</span>` : ''))}
             ${row('Nhà phát hành (CA)', g.issuerCN)}
             ${row('Phạm vi phủ', cover)}
             ${rowRaw('Dấu thời gian (TSA)', s.hasTimestamp ? '<span class="badge ok">Có</span>' : '<span class="badge warn">Không</span>')}
@@ -157,6 +160,8 @@
     mine.forEach((c) => {
       const isOrg = !c.orgUnit && c.org;
       const badge = `<span class="rolebadge role-me">${isOrg ? 'Chứng thư tổ chức' : '★ Chứng thư cá nhân'}</span>`;
+      const warnedC = adminWarnings(c).length > 0;
+      const effStatusC = (warnedC && c.status && c.status.includes('CÒN')) ? 'HẾT HIỆU LỰC' : c.status;
       html += `<div class="sig">
         <h3>${esc(c.commonName || 'Chứng thư')} ${badge}</h3>
         <table>
@@ -165,7 +170,7 @@
           ${row('Cơ quan chủ quản (O)', c.org)}
           ${row('Số serial', c.serialNumber)}
           ${row('Hiệu lực', c.notBefore ? fmt(c.notBefore) + ' → ' + fmt(c.notAfter) : '')}
-          ${rowRaw('Trạng thái', statusBadge(c.status))}
+          ${rowRaw('Trạng thái', statusBadge(effStatusC))}
           ${row('Nhà phát hành (CA)', c.issuerCN)}
         </table>${warnBlock(c)}</div>`;
     });

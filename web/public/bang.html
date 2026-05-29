@@ -35,6 +35,10 @@
     .pager .pjump { width: 58px; padding: 5px 7px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; text-align: center; }
     .btn.danger { color: var(--bad-fg); border-color: #E3B4AA; }
     .btn.danger:hover { background: var(--bad-bg); }
+    .colctl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: -2px 0 10px; font-size: 13px; color: var(--muted); }
+    .colctl .cclabel { font-weight: 600; }
+    .colctl .cck { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: var(--ink); }
+    .colctl .cck input { cursor: pointer; }
   </style>
 </head>
 <body>
@@ -55,6 +59,7 @@
         </div>
       </div>
 
+      <div id="colctl" class="colctl"></div>
       <div id="summary" class="statbar"></div>
       <div class="tablewrap">
         <table class="histtable" id="tbl">
@@ -87,8 +92,8 @@
       { key: 'orgUnit', label: 'Đơn vị (OU)', type: 'text', wrap: true },
       { key: 'org', label: 'Cơ quan chủ quản (O)', type: 'text', wrap: true },
       { key: 'locality', label: 'Địa phương (L)', type: 'text' },
-      { key: 'email', label: 'Email', type: 'text' },
-      { key: 'serial', label: 'Số serial', type: 'text' },
+      { key: 'email', label: 'Email', type: 'text', optional: true },
+      { key: 'serial', label: 'Số serial', type: 'text', optional: true },
       { key: 'notBefore', label: 'Hiệu lực từ', type: 'date' },
       { key: 'notAfter', label: 'Hết hạn', type: 'date' },
       { key: '_status', label: 'Trạng thái', type: 'status' },
@@ -101,8 +106,9 @@
       { key: '_warn', label: 'Cảnh báo đơn vị', type: 'warn', wrap: true },
     ];
 
-    const STATUS_RANK = { 'Còn hiệu lực': 1, 'Sắp hết hạn': 2, 'Chưa hiệu lực': 3, 'Đã hết hạn': 4, 'Không rõ': 5 };
-    const state = { all: [], filtered: [], page: 1, sortKey: 'lastSeen', sortDir: -1 };
+    const STATUS_RANK = { 'Còn hiệu lực': 1, 'Sắp hết hạn': 2, 'Chưa hiệu lực': 3, 'Hết hiệu lực': 4, 'Đã hết hạn': 5, 'Không rõ': 6 };
+    const state = { all: [], filtered: [], page: 1, sortKey: 'lastSeen', sortDir: -1, hidden: new Set(['email', 'serial']) };
+    const visCols = () => COLS.filter((c) => !state.hidden.has(c.key));
 
     function computeStatus(c) {
       if (!c.notBefore || !c.notAfter) return 'Không rõ';
@@ -114,7 +120,7 @@
       return 'Còn hiệu lực';
     }
     function statusBadge(st) {
-      const cls = st === 'Còn hiệu lực' ? 'ok' : st === 'Đã hết hạn' ? 'bad' : st === 'Không rõ' ? '' : 'warn';
+      const cls = st === 'Còn hiệu lực' ? 'ok' : (st === 'Đã hết hạn' || st === 'Hết hiệu lực') ? 'bad' : st === 'Không rõ' ? '' : 'warn';
       return `<span class="badge ${cls}">${esc(st)}</span>`;
     }
     function adminWarn(c) {
@@ -134,12 +140,14 @@
 
     function decorate(certs) {
       return certs.map((c, i) => {
-        const _status = computeStatus(c);
+        const _statusDate = computeStatus(c);               // trạng thái theo ngày hiệu lực (dùng cho thống kê)
         const _warn = adminWarn(c);
+        // CTS còn "Hà Giang" / "Huyện" (đơn vị hành chính đã hết hiệu lực) -> hiển thị "Hết hiệu lực"
+        const _status = (_warn && _statusDate !== 'Đã hết hạn') ? 'Hết hiệu lực' : _statusDate;
         const _loai = loaiCKS(c);
         const _search = norm(SEARCH_FIELDS.map((f) => c[f]).filter(Boolean).join(' ')
           + ' ' + fmtDate(c.notBefore) + ' ' + fmtDate(c.notAfter) + ' ' + _warn + ' ' + _status + ' ' + _loai);
-        return Object.assign({}, c, { _idx0: i, _status, _warn, _loai, _search });
+        return Object.assign({}, c, { _idx0: i, _statusDate, _status, _warn, _loai, _search });
       });
     }
 
@@ -151,6 +159,7 @@
         if (!r.ok) throw new Error(d.error || 'Lỗi');
         state.all = decorate(d.certs || []);
         $('expBtn').setAttribute('href', '/api/history/export?key=' + encodeURIComponent(KEY));
+        buildColCtl();
         buildHead();
         state.page = 1;
         apply();
@@ -164,7 +173,7 @@
       const all = state.all, total = all.length;
       let valid = 0, expired = 0, warned = 0, soon = 0, cnT = 0, cnV = 0, tcT = 0, tcV = 0;
       all.forEach((c) => {
-        const exp = c._status === 'Đã hết hạn', w = !!c._warn, sn = c._status === 'Sắp hết hạn';
+        const exp = c._statusDate === 'Đã hết hạn', w = !!c._warn, sn = c._statusDate === 'Sắp hết hạn';
         const ok = !exp && !w;
         if (sn) soon++; if (exp) expired++; if (w) warned++; if (ok) valid++;
         if (c._loai === 'Tổ chức') { tcT++; if (ok) tcV++; } else { cnT++; if (ok) cnV++; }
@@ -178,7 +187,7 @@
     }
 
     function buildHead() {
-      $('head').innerHTML = COLS.map((col) => {
+      $('head').innerHTML = visCols().map((col) => {
         const arr = state.sortKey === col.key ? `<span class="arr">${state.sortDir === 1 ? '▲' : '▼'}</span>` : '';
         return `<th data-key="${col.key}">${esc(col.label)}${arr}</th>`;
       }).join('');
@@ -187,6 +196,22 @@
           const k = th.getAttribute('data-key');
           if (state.sortKey === k) state.sortDir *= -1; else { state.sortKey = k; state.sortDir = 1; }
           buildHead(); apply();
+        };
+      });
+    }
+
+    // Cụm tick hiển thị cột tuỳ chọn (Email, Số serial) — mặc định ẩn cho gọn
+    function buildColCtl() {
+      const opt = COLS.filter((c) => c.optional);
+      $('colctl').innerHTML = '<span class="cclabel">Hiện cột:</span>' + opt.map((c) => {
+        const lbl = esc(c.label.replace(/\s*\(.*?\)\s*/g, '').trim());
+        return `<label class="cck"><input type="checkbox" data-key="${c.key}" ${state.hidden.has(c.key) ? '' : 'checked'} /> ${lbl}</label>`;
+      }).join('');
+      $('colctl').querySelectorAll('input').forEach((inp) => {
+        inp.onchange = () => {
+          const k = inp.getAttribute('data-key');
+          if (inp.checked) state.hidden.delete(k); else state.hidden.add(k);
+          buildHead(); render();
         };
       });
     }
@@ -233,9 +258,10 @@
         : `Không có kết quả phù hợp`;
       $('summary').innerHTML = statsHtml() + `<span class="sep">|</span><span class="si show">${showing}</span>`;
 
-      $('body').innerHTML = pageRows.map((c) => '<tr' + ((c._status === 'Đã hết hạn' || c._warn) ? ' class="rowwarn"' : '') + '>'
-        + COLS.map((col) => `<td class="${col.wrap ? 'wrap' : ''}" title="${esc(col.type === 'idx' ? '' : (col.key.startsWith('_') ? (c[col.key] || '') : (c[col.key] || '')))}">${cellHtml(col, c, pageRows.indexOf(c))}</td>`).join('')
-        + '</tr>').join('') || `<tr><td colspan="${COLS.length}" style="text-align:center;color:var(--muted);padding:18px">Không có dữ liệu</td></tr>`;
+      const cols = visCols();
+      $('body').innerHTML = pageRows.map((c) => '<tr' + ((c._statusDate === 'Đã hết hạn' || c._warn) ? ' class="rowwarn"' : '') + '>'
+        + cols.map((col) => `<td class="${col.wrap ? 'wrap' : ''}" title="${esc(col.type === 'idx' ? '' : (col.key.startsWith('_') ? (c[col.key] || '') : (c[col.key] || '')))}">${cellHtml(col, c, pageRows.indexOf(c))}</td>`).join('')
+        + '</tr>').join('') || `<tr><td colspan="${cols.length}" style="text-align:center;color:var(--muted);padding:18px">Không có dữ liệu</td></tr>`;
 
       renderPager(Math.max(1, Math.ceil(n / PAGE_SIZE)));
     }
