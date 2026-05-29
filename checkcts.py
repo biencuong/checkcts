@@ -73,14 +73,20 @@ def get_attr(name, oid):
         return None
 
 
-def admin_warnings(*fields):
-    """Canh bao don vi hanh chinh khong con phu hop (sap nhap + chinh quyen 2 cap tu 01/7/2025)."""
-    text = " ".join(f for f in fields if f).upper()
+def admin_warnings(org=None, loc=None):
+    """Canh bao don vi hanh chinh khong con phu hop. CHI xet Co quan chu quan (O) + Dia phuong (L);
+    KHONG xet Ten/To chuc (CN) va Don vi (OU). 'Huyen' khop CO DAU (tranh nham ten nguoi Huyen/Huyen)."""
+    import re, unicodedata
+    raw = " ".join(f for f in (org, loc) if f)
+    nfc = unicodedata.normalize("NFC", raw)
+    low = nfc.lower()
+    stripped = "".join(c for c in unicodedata.normalize("NFD", low) if unicodedata.category(c) != "Mn").replace("đ", "d")
+    stripped = re.sub(r"ha giang\s*[12](?!\d)", "", stripped)  # loai tru phuong moi "Ha Giang 1/2" (van hop le)
     w = []
-    if "HÀ GIANG" in text:
+    if "ha giang" in stripped:
         w.append("Tinh Ha Giang da sap nhap vao tinh Tuyen Quang tu 01/7/2025 "
                  "- ten 'tinh Ha Giang' tren chung thu KHONG con phu hop.")
-    if "HUYỆN" in text:
+    if "huyện" in low:
         w.append("Tu 01/7/2025 ap dung chinh quyen 2 cap (tinh - xa), KHONG con cap Huyen "
                  "- thong tin don vi cap huyen khong con phu hop.")
     return w
@@ -134,7 +140,7 @@ def print_cert(cert, indent="    "):
     except Exception:
         pass
     # Canh bao don vi hanh chinh da het hieu luc (Ha Giang sap nhap / bo cap Huyen)
-    for w in admin_warnings(cn, o, ou, loc):
+    for w in admin_warnings(o, loc):
         print(f"{indent}*** CANH BAO (don vi het hieu luc): {w}")
 
 

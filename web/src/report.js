@@ -48,11 +48,15 @@ function fmtDate(iso) {
 }
 
 // Cảnh báo đơn vị hành chính hết hiệu lực (sáp nhập + bỏ cấp huyện từ 01/7/2025)
-function adminWarn(...fields) {
-  const text = fields.filter(Boolean).join(' ').toUpperCase();
+// CHỈ xét Cơ quan chủ quản (O) + Địa phương (L); "Huyện" khớp nguyên từ + có dấu (tránh nhầm tên người "Huyến/Huyền")
+const RE_HUYEN = new RegExp('(?:^|[^\\p{L}])' + 'huyện'.normalize('NFC') + '(?:[^\\p{L}]|$)', 'iu');
+function adminWarn(org, locality) {
+  const raw = [org, locality].filter(Boolean).join(' ').normalize('NFC');
+  // bỏ dấu để bắt "Hà Giang"; loại trừ phường mới "Hà Giang 1" / "Hà Giang 2" (vẫn hợp lệ)
+  const stripped = raw.normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().replace(/ha giang\s*[12](?!\d)/g, '');
   const w = [];
-  if (text.includes('HÀ GIANG')) w.push('CẢNH BÁO: "tỉnh Hà Giang" đã sáp nhập vào Tuyên Quang (01/7/2025) - không còn phù hợp');
-  if (/HUYỆN/.test(text)) w.push('CẢNH BÁO: không còn cấp Huyện từ 01/7/2025 (chính quyền 2 cấp)');
+  if (stripped.includes('ha giang')) w.push('CẢNH BÁO: "tỉnh Hà Giang" đã sáp nhập vào Tuyên Quang (01/7/2025) - không còn phù hợp');
+  if (RE_HUYEN.test(raw)) w.push('CẢNH BÁO: không còn cấp Huyện từ 01/7/2025 (chính quyền 2 cấp)');
   return w.join(' | ');
 }
 
@@ -83,7 +87,7 @@ function flattenRows(data) {
         toanVen: s.intact ? 'Hợp lệ' : 'KHÔNG hợp lệ',
         ghiChu: [
           (s.coverage === 'ENTIRE_FILE' ? 'Phủ toàn bộ file' : 'Phủ revision') + (s.hasTimestamp ? '; có TSA' : ''),
-          adminWarn(g.commonName, g.org, g.orgUnit, g.locality),
+          adminWarn(g.org, g.locality),
         ].filter(Boolean).join(' | '),
       });
     });
@@ -100,7 +104,7 @@ function flattenRows(data) {
         hieuLuc: `${fmtDate(c.notBefore)} - ${fmtDate(c.notAfter)}`,
         trangThai: c.status || '',
         toanVen: '',
-        ghiChu: [c.issuerCN ? 'CA: ' + c.issuerCN : '', adminWarn(c.commonName, c.org, c.orgUnit, c.locality)].filter(Boolean).join(' | '),
+        ghiChu: [c.issuerCN ? 'CA: ' + c.issuerCN : '', adminWarn(c.org, c.locality)].filter(Boolean).join(' | '),
       });
     });
   }

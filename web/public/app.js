@@ -51,13 +51,18 @@
   }
 
   // Cảnh báo đơn vị hành chính không còn phù hợp (sáp nhập + chính quyền 2 cấp từ 01/7/2025)
+  // "Huyện" phải khớp NGUYÊN TỪ + CÓ DẤU (dấu nặng ệ) để không nhầm tên người "Huyến/Huyền"
+  const RE_HUYEN = new RegExp('(?:^|[^\\p{L}])' + 'huyện'.normalize('NFC') + '(?:[^\\p{L}]|$)', 'iu');
   function adminWarnings(o) {
     if (!o) return [];
-    const text = [o.commonName, o.org, o.orgUnit, o.locality].filter(Boolean).join(' ').toUpperCase();
+    // CHỈ xét Cơ quan chủ quản (O) + Địa phương (L); KHÔNG xét Tên/Tổ chức (CN) và Đơn vị (OU)
+    const raw = [o.org, o.locality].filter(Boolean).join(' ').normalize('NFC');
+    // bỏ dấu để bắt "Hà Giang"; loại trừ phường mới "Hà Giang 1" / "Hà Giang 2" (vẫn hợp lệ)
+    const stripped = raw.normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().replace(/ha giang\s*[12](?!\d)/g, '');
     const w = [];
-    if (text.includes('HÀ GIANG'))
+    if (stripped.includes('ha giang'))
       w.push('Tỉnh Hà Giang đã sáp nhập vào tỉnh Tuyên Quang từ 01/7/2025 — tên "tỉnh Hà Giang" trên chứng thư KHÔNG còn phù hợp.');
-    if (/HUYỆN/.test(text))
+    if (RE_HUYEN.test(raw))
       w.push('Từ 01/7/2025 áp dụng chính quyền 2 cấp (tỉnh – xã), KHÔNG còn cấp Huyện — thông tin đơn vị cấp huyện không còn phù hợp.');
     return w;
   }

@@ -131,8 +131,10 @@
     // như "Huyến", "Huyền" (bỏ dấu đều ra "huyen"). Dùng NFC cho chắc chắn về Unicode.
     const RE_HUYEN = new RegExp('(?:^|[^\\p{L}])' + 'huyện'.normalize('NFC') + '(?:[^\\p{L}]|$)', 'iu');
     function adminWarn(c) {
-      const raw = [c.commonName, c.org, c.orgUnit, c.locality].filter(Boolean).join(' ');
-      const t = norm(raw);
+      // CHỈ xét Cơ quan chủ quản (O) + Địa phương (L); KHÔNG xét Tên/Tổ chức (CN) và Đơn vị (OU)
+      const raw = [c.org, c.locality].filter(Boolean).join(' ');
+      // bỏ dấu để bắt "Hà Giang"; loại trừ phường mới "Hà Giang 1" / "Hà Giang 2" (vẫn hợp lệ)
+      const t = norm(raw).replace(/ha giang\s*[12](?!\d)/g, '');
       const w = [];
       if (t.includes('ha giang')) w.push('Hà Giang đã sáp nhập vào Tuyên Quang');
       if (RE_HUYEN.test(raw.normalize('NFC'))) w.push('Không còn cấp Huyện');
