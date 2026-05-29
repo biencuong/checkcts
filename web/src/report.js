@@ -54,8 +54,10 @@ function adminWarn(org, locality) {
   const raw = [org, locality].filter(Boolean).join(' ').normalize('NFC');
   // bỏ dấu để bắt "Hà Giang"; loại trừ phường mới "Hà Giang 1" / "Hà Giang 2" (vẫn hợp lệ)
   const stripped = raw.normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().replace(/ha giang\s*[12](?!\d)/g, '');
+  // Cơ quan chủ quản đã là "Tuyên Quang" -> đơn vị đã cập nhật tỉnh mới, KHÔNG cảnh báo "Hà Giang"
+  const oTuyenQuang = String(org || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().includes('tuyen quang');
   const w = [];
-  if (stripped.includes('ha giang')) w.push('CẢNH BÁO: "tỉnh Hà Giang" đã sáp nhập vào Tuyên Quang (01/7/2025) - không còn phù hợp');
+  if (stripped.includes('ha giang') && !oTuyenQuang) w.push('CẢNH BÁO: "tỉnh Hà Giang" đã sáp nhập vào Tuyên Quang (01/7/2025) - không còn phù hợp');
   if (RE_HUYEN.test(raw)) w.push('CẢNH BÁO: không còn cấp Huyện từ 01/7/2025 (chính quyền 2 cấp)');
   return w.join(' | ');
 }

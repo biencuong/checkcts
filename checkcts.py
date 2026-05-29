@@ -82,8 +82,11 @@ def admin_warnings(org=None, loc=None):
     low = nfc.lower()
     stripped = "".join(c for c in unicodedata.normalize("NFD", low) if unicodedata.category(c) != "Mn").replace("đ", "d")
     stripped = re.sub(r"ha giang\s*[12](?!\d)", "", stripped)  # loai tru phuong moi "Ha Giang 1/2" (van hop le)
+    # Co quan chu quan da la "Tuyen Quang" -> don vi da cap nhat tinh moi, KHONG canh bao "Ha Giang"
+    o_low = unicodedata.normalize("NFC", org or "").lower()
+    o_tuyen_quang = "tuyen quang" in "".join(c for c in unicodedata.normalize("NFD", o_low) if unicodedata.category(c) != "Mn").replace("đ", "d")
     w = []
-    if "ha giang" in stripped:
+    if "ha giang" in stripped and not o_tuyen_quang:
         w.append("Tinh Ha Giang da sap nhap vao tinh Tuyen Quang tu 01/7/2025 "
                  "- ten 'tinh Ha Giang' tren chung thu KHONG con phu hop.")
     if "huyện" in low:
