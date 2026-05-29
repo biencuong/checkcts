@@ -19,6 +19,10 @@
     .statbar .bad b { color: var(--bad-fg); }
     .statbar .warn2 b { color: var(--warn-fg); }
     .statbar .show { color: var(--muted); }
+    .statbar .si.clk { cursor: pointer; border-radius: 6px; padding: 1px 6px; transition: background .12s; }
+    .statbar .si.clk:hover { background: var(--coral-sft); }
+    .statbar .si.active { background: var(--coral); }
+    .statbar .si.active, .statbar .si.active b { color: #fff; }
     .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
     .histtable { border: 0; }
     .histtable th { cursor: pointer; white-space: nowrap; user-select: none; }
@@ -107,7 +111,7 @@
     ];
 
     const STATUS_RANK = { 'Còn hiệu lực': 1, 'Sắp hết hạn': 2, 'Chưa hiệu lực': 3, 'Hết hiệu lực': 4, 'Đã hết hạn': 5, 'Không rõ': 6 };
-    const state = { all: [], filtered: [], page: 1, sortKey: 'lastSeen', sortDir: -1, hidden: new Set(['email', 'serial']) };
+    const state = { all: [], filtered: [], page: 1, sortKey: 'lastSeen', sortDir: -1, hidden: new Set(['email', 'serial']), statFilter: 'all' };
     const visCols = () => COLS.filter((c) => !state.hidden.has(c.key));
 
     function computeStatus(c) {
@@ -173,17 +177,45 @@
       const all = state.all, total = all.length;
       let valid = 0, expired = 0, warned = 0, soon = 0, cnT = 0, cnV = 0, tcT = 0, tcV = 0;
       all.forEach((c) => {
-        const exp = c._statusDate === 'Đã hết hạn', w = !!c._warn, sn = c._statusDate === 'Sắp hết hạn';
+        const exp = c._statusDate === 'Đã hết hạn', w = !!c._warn;
+        // CTS bị lệch sang "Hết hiệu lực" (cảnh báo đơn vị) thì KHÔNG tính là sắp hết hạn nữa
+        const sn = c._status === 'Sắp hết hạn';
         const ok = !exp && !w;
         if (sn) soon++; if (exp) expired++; if (w) warned++; if (ok) valid++;
         if (c._loai === 'Tổ chức') { tcT++; if (ok) tcV++; } else { cnT++; if (ok) cnV++; }
       });
-      return `<span class="si">Tổng CTS: <b>${total}</b></span><span class="sep">|</span>`
-        + `<span class="si ok">Hợp lệ: <b>${valid}/${total}</b> (${pct(valid, total)})</span>`
-        + `<span class="si">— cá nhân <b>${cnV}/${cnT}</b> (${pct(cnV, cnT)})</span>`
-        + `<span class="si">tổ chức <b>${tcV}/${tcT}</b> (${pct(tcV, tcT)})</span><span class="sep">|</span>`
-        + `<span class="si bad">Không hợp lệ: <b>${total - valid}/${total}</b> (${pct(total - valid, total)}) — hết hạn ${expired}, cảnh báo ${warned}</span><span class="sep">|</span>`
-        + `<span class="si warn2">Sắp hết hạn (≤1 tháng): <b>${soon}</b></span>`;
+      const sf = state.statFilter || 'all';
+      const A = (k) => (sf === k ? ' active' : '');
+      return `<span class="si clk${A('all')}" data-sf="all" title="Hiện tất cả">Tổng CTS: <b>${total}</b></span><span class="sep">|</span>`
+        + `<span class="si ok clk${A('valid')}" data-sf="valid" title="Lọc: hợp lệ">Hợp lệ: <b>${valid}/${total}</b> (${pct(valid, total)})</span>`
+        + `<span class="si clk${A('valid-cn')}" data-sf="valid-cn" title="Lọc: cá nhân hợp lệ">— cá nhân <b>${cnV}/${cnT}</b> (${pct(cnV, cnT)})</span>`
+        + `<span class="si clk${A('valid-tc')}" data-sf="valid-tc" title="Lọc: tổ chức hợp lệ">tổ chức <b>${tcV}/${tcT}</b> (${pct(tcV, tcT)})</span><span class="sep">|</span>`
+        + `<span class="si bad clk${A('invalid')}" data-sf="invalid" title="Lọc: không hợp lệ">Không hợp lệ: <b>${total - valid}/${total}</b> (${pct(total - valid, total)})</span>`
+        + `<span class="si clk${A('expired')}" data-sf="expired" title="Lọc: đã hết hạn">— hết hạn ${expired}</span>`
+        + `<span class="si clk${A('warned')}" data-sf="warned" title="Lọc: cảnh báo đơn vị (Hết hiệu lực)">cảnh báo ${warned}</span><span class="sep">|</span>`
+        + `<span class="si warn2 clk${A('soon')}" data-sf="soon" title="Lọc: sắp hết hạn ≤1 tháng">Sắp hết hạn (≤1 tháng): <b>${soon}</b></span>`;
+    }
+
+    // Bộ lọc theo ô thống kê được bấm
+    function matchStat(c) {
+      const sf = state.statFilter || 'all';
+      if (sf === 'all') return true;
+      const exp = c._statusDate === 'Đã hết hạn', w = !!c._warn, ok = !exp && !w;
+      switch (sf) {
+        case 'valid': return ok;
+        case 'valid-cn': return ok && c._loai !== 'Tổ chức';
+        case 'valid-tc': return ok && c._loai === 'Tổ chức';
+        case 'invalid': return exp || w;
+        case 'expired': return exp;
+        case 'warned': return w;
+        case 'soon': return c._status === 'Sắp hết hạn';
+        default: return true;
+      }
+    }
+    function setStatFilter(k) {
+      state.statFilter = (k === 'all' || state.statFilter === k) ? 'all' : k;  // bấm lại mục đang chọn = bỏ lọc
+      state.page = 1;
+      apply();
     }
 
     function buildHead() {
@@ -219,7 +251,7 @@
     // Tìm kiếm thông minh (1 ô) + sắp xếp
     function apply() {
       const terms = norm($('q').value).split(/\s+/).filter(Boolean);
-      let rows = state.all.filter((c) => terms.length === 0 || terms.every((t) => c._search.includes(t)));
+      let rows = state.all.filter((c) => (terms.length === 0 || terms.every((t) => c._search.includes(t))) && matchStat(c));
       const key = state.sortKey, dir = state.sortDir;
       const col = COLS.find((x) => x.key === key) || {};
       rows.sort((a, b) => {
@@ -257,6 +289,7 @@
         ? `Hiển thị <b>${start + 1}–${start + pageRows.length}</b>/<b>${n}</b>${n !== total ? ` (lọc từ ${total})` : ''} · 50 dòng/trang`
         : `Không có kết quả phù hợp`;
       $('summary').innerHTML = statsHtml() + `<span class="sep">|</span><span class="si show">${showing}</span>`;
+      $('summary').querySelectorAll('[data-sf]').forEach((el) => { el.onclick = () => setStatFilter(el.getAttribute('data-sf')); });
 
       const cols = visCols();
       $('body').innerHTML = pageRows.map((c) => '<tr' + ((c._statusDate === 'Đã hết hạn' || c._warn) ? ' class="rowwarn"' : '') + '>'
@@ -299,7 +332,7 @@
 
     let t;
     $('q').addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { state.page = 1; apply(); }, 200); });
-    $('clearBtn').onclick = () => { $('q').value = ''; state.page = 1; apply(); };
+    $('clearBtn').onclick = () => { $('q').value = ''; state.statFilter = 'all'; state.page = 1; apply(); };
     $('logoutBtn').onclick = () => { sessionStorage.removeItem('cks_key'); location.replace('admin.html'); };
 
     $('purgeBtn').onclick = async () => {
