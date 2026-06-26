@@ -4,73 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AWord — Giải pháp AI &amp; Chuyển đổi số</title>
-  <meta name="description" content="AWord (aword.vn) — đồng hành cùng cơ quan, doanh nghiệp ứng dụng trí tuệ nhân tạo và chuyển đổi số: tư vấn, tự động hóa quy trình, phần mềm theo yêu cầu, đào tạo & chuyển giao." />
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .about { max-width: 980px; margin: 32px auto; }
-
-    /* Hero */
-    .hero { text-align: center; padding: 40px 30px 34px; }
-    .brand { font-family: Georgia, "Times New Roman", serif; font-size: 40px; font-weight: 700; letter-spacing: -.5px; color: var(--coral); margin: 0; }
+    .about { max-width: 640px; margin: 40px auto; }
+    .about .card { text-align: center; padding: 36px 30px 30px; }
+    .brand { font-family: Georgia, "Times New Roman", serif; font-size: 36px; font-weight: 700; letter-spacing: -.5px; color: var(--coral); margin: 0; }
     .brand .dot { color: var(--ink); }
-    .domain { display: inline-block; margin: 6px 0 0; font-size: 13px; font-weight: 700; letter-spacing: .6px; text-transform: lowercase;
-      color: var(--coral-dk); background: var(--coral-sft); border: 1px solid #EBC9B9; border-radius: 999px; padding: 3px 13px; }
-    .tagline { margin: 14px 0 0; font-size: 16px; color: var(--ink); font-weight: 600; }
-    .lead { margin: 14px auto 0; max-width: 640px; font-size: 15px; color: #4a4843; line-height: 1.7; }
-    .hero-cta { margin: 24px 0 0; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-
-    /* Tiêu đề mục */
-    .sec { margin: 30px 0 0; }
-    .sec-head { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 14px; }
-    .sec-head h2 { margin: 0; font-size: 19px; font-weight: 600; font-family: Georgia, serif; color: var(--ink); }
-    .sec-head .sec-sub { font-size: 13px; color: var(--muted); }
-
-    /* Lưới dịch vụ */
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-    @media (max-width: 860px) { .grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
-    .svc { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 16px; box-shadow: 0 1px 2px rgba(31,30,29,.04); }
-    .svc .ico { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 20px;
-      background: var(--coral-sft); border: 1px solid #EBC9B9; border-radius: 11px; margin-bottom: 11px; }
-    .svc h3 { margin: 0 0 6px; font-size: 15.5px; font-weight: 600; color: var(--ink); }
-    .svc p { margin: 0; font-size: 13.5px; line-height: 1.6; color: #5a574f; }
-
-    /* Vì sao chọn */
-    .why { background: var(--cream-2); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
-    .why-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 22px; margin: 0; padding: 0; list-style: none; }
-    @media (max-width: 560px) { .why-list { grid-template-columns: 1fr; } }
-    .why-list li { display: flex; gap: 11px; align-items: flex-start; }
-    .why-list .chk { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 999px; background: var(--coral); color: #fff;
-      display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; margin-top: 1px; }
-    .why-list b { display: block; font-size: 14.5px; color: var(--ink); margin-bottom: 2px; }
-    .why-list span.t { font-size: 13.5px; color: #5a574f; line-height: 1.55; }
-
-    /* Sản phẩm tiêu biểu */
-    .product { display: flex; gap: 16px; align-items: center; background: var(--card); border: 1px solid var(--line);
-      border-left: 4px solid var(--coral); border-radius: 14px; padding: 18px 20px; }
-    .product .pbody { flex: 1 1 auto; }
-    .product h3 { margin: 0 0 5px; font-size: 16px; color: var(--ink); }
-    .product p { margin: 0; font-size: 13.5px; color: #5a574f; line-height: 1.6; }
-    @media (max-width: 560px) { .product { flex-direction: column; align-items: stretch; text-align: left; } }
-
-    /* Liên hệ */
-    .contact-card { display: grid; grid-template-columns: 260px 1fr; gap: 24px; align-items: center;
-      background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 26px; }
-    @media (max-width: 700px) { .contact-card { grid-template-columns: 1fr; text-align: center; justify-items: center; } }
-    .qr-wrap img { width: 220px; height: 220px; border: 1px solid var(--line); border-radius: 16px; padding: 12px; background: #fff; box-shadow: 0 1px 3px rgba(31,30,29,.06); }
-    .qr-cap { margin: 9px 0 0; font-size: 12.5px; color: var(--muted); text-align: center; }
-    .contact-info h2 { margin: 0 0 6px; font-size: 19px; font-family: Georgia, serif; color: var(--ink); }
-    .contact-info .ci-lead { margin: 0 0 16px; font-size: 14px; color: #5a574f; line-height: 1.6; }
-    .ci-row { display: flex; align-items: center; gap: 11px; margin: 9px 0; font-size: 14.5px; color: var(--ink); }
-    .ci-row .ci-ic { width: 30px; height: 30px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
-      background: var(--coral-sft); border-radius: 8px; font-size: 15px; }
-    .ci-row a { color: var(--coral-dk); font-weight: 700; text-decoration: none; }
-    .ci-row a:hover { text-decoration: underline; }
-
-    .services { display: flex; gap: 9px; flex-wrap: wrap; justify-content: center; margin: 16px auto 0; }
+    .tagline { margin: 8px 0 0; font-size: 15px; color: var(--ink); font-weight: 600; }
+    .lead { margin: 14px auto 0; max-width: 520px; font-size: 14.5px; color: #4a4843; line-height: 1.65; }
+    .qr-wrap { margin: 26px auto 6px; }
+    .qr-wrap img { width: 236px; height: 236px; border: 1px solid var(--line); border-radius: 16px; padding: 12px; background: #fff; box-shadow: 0 1px 3px rgba(31,30,29,.06); }
+    .qr-cap { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+    .contact { margin: 22px auto 2px; display: inline-flex; align-items: center; gap: 12px; background: var(--coral-sft); border: 1px solid #EBC9B9; border-radius: 999px; padding: 9px 12px 9px 20px; }
+    .contact .label { font-size: 12px; color: #8a4a32; text-transform: uppercase; letter-spacing: .4px; font-weight: 700; }
+    .contact a { font-size: 20px; font-weight: 700; color: var(--coral-dk); text-decoration: none; font-family: Georgia, serif; }
+    .services { display: flex; gap: 9px; flex-wrap: wrap; justify-content: center; margin: 24px auto 0; }
     .chip { background: var(--cream-2); border: 1px solid var(--line); border-radius: 999px; padding: 7px 15px; font-size: 13px; color: #4a4843; }
-
-    .back { margin: 30px 0 0; text-align: center; }
+    .back { margin-top: 28px; }
   </style>
 </head>
 <body>
@@ -81,140 +31,39 @@
 
   <main>
     <div class="about">
-
-      <!-- HERO -->
-      <section class="card hero">
+      <section class="card">
         <p class="brand">AWord<span class="dot">.</span></p>
-        <span class="domain">aword.vn</span>
         <p class="tagline">Giải pháp AI &amp; Chuyển đổi số cho cơ quan, doanh nghiệp</p>
         <p class="lead">
-          AWord đồng hành cùng các cơ quan nhà nước và doanh nghiệp đưa <b>trí tuệ nhân tạo (AI)</b>
-          và <b>chuyển đổi số</b> vào công việc hằng ngày — tự động hóa quy trình, giảm thao tác thủ công,
-          tiết kiệm thời gian và nâng cao hiệu quả, năng suất một cách bền vững.
+          AWord đồng hành cùng các cơ quan và doanh nghiệp đưa <b>trí tuệ nhân tạo (AI)</b>
+          và <b>chuyển đổi số</b> vào công việc hằng ngày — tự động hóa quy trình, tiết kiệm
+          thời gian, nâng cao hiệu quả và năng suất một cách bền vững.
         </p>
-        <div class="hero-cta">
-          <a class="btn" href="https://zalo.me/0983606845" target="_blank" rel="noopener">💬 Liên hệ tư vấn qua Zalo</a>
-          <a class="btn btn-outline" href="/">← Về công cụ kiểm tra CKS</a>
+
+        <div class="qr-wrap">
+          <img src="assets/aword-qr.jpg" alt="Mã QR Zalo liên hệ AWord" />
+          <p class="qr-cap">Quét mã Zalo để kết nối &amp; nhận tư vấn</p>
+        </div>
+
+        <div class="contact">
+          <span class="label">Hotline / Zalo</span>
+          <a href="tel:0983606845">0983 606 845</a>
+        </div>
+
+        <div class="services">
+          <span class="chip">Tư vấn ứng dụng AI</span>
+          <span class="chip">Chuyển đổi số</span>
+          <span class="chip">Tự động hóa quy trình</span>
+          <span class="chip">Đào tạo &amp; chuyển giao</span>
+        </div>
+
+        <div class="back">
+          <a class="btn btn-outline" href="/">← Về trang kiểm tra CKS</a>
         </div>
       </section>
-
-      <!-- DỊCH VỤ -->
-      <section class="sec">
-        <div class="sec-head">
-          <h2>Dịch vụ của chúng tôi</h2>
-          <span class="sec-sub">Từ tư vấn đến triển khai &amp; chuyển giao</span>
-        </div>
-        <div class="grid">
-          <div class="svc">
-            <div class="ico">🤖</div>
-            <h3>Tư vấn &amp; ứng dụng AI</h3>
-            <p>Khảo sát nghiệp vụ, đề xuất bài toán phù hợp và đưa AI vào đúng chỗ tạo giá trị thật — trợ lý ảo, xử lý văn bản, phân tích dữ liệu.</p>
-          </div>
-          <div class="svc">
-            <div class="ico">🔄</div>
-            <h3>Chuyển đổi số toàn diện</h3>
-            <p>Số hóa quy trình, dữ liệu và tài liệu; xây dựng nền tảng quản lý điều hành giúp công việc minh bạch, liền mạch và đo lường được.</p>
-          </div>
-          <div class="svc">
-            <div class="ico">⚙️</div>
-            <h3>Tự động hóa quy trình</h3>
-            <p>Thay thế các thao tác lặp lại bằng luồng tự động: tổng hợp báo cáo, đồng bộ dữ liệu, nhắc việc, kết nối các hệ thống sẵn có.</p>
-          </div>
-          <div class="svc">
-            <div class="ico">🧩</div>
-            <h3>Phần mềm theo yêu cầu</h3>
-            <p>Thiết kế và phát triển ứng dụng web, công cụ tiện ích, tiện ích trình duyệt &amp; tích hợp API bám sát đúng nhu cầu của đơn vị.</p>
-          </div>
-          <div class="svc">
-            <div class="ico">🔗</div>
-            <h3>Tích hợp &amp; kết nối</h3>
-            <p>Kết nối các phần mềm, cơ sở dữ liệu và dịch vụ đang dùng để dữ liệu chảy thông suốt, không còn nhập liệu trùng lặp.</p>
-          </div>
-          <div class="svc">
-            <div class="ico">🎓</div>
-            <h3>Đào tạo &amp; chuyển giao</h3>
-            <p>Hướng dẫn, tập huấn và chuyển giao công nghệ để đội ngũ tại chỗ tự vận hành, làm chủ giải pháp một cách lâu dài.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- SẢN PHẨM TIÊU BIỂU -->
-      <section class="sec">
-        <div class="sec-head">
-          <h2>Sản phẩm tiêu biểu</h2>
-          <span class="sec-sub">Công cụ do AWord phát triển</span>
-        </div>
-        <div class="product">
-          <div class="ico" style="width:48px;height:48px;font-size:24px;">🔏</div>
-          <div class="pbody">
-            <h3>CheckCTS — Kiểm tra hiệu lực chữ ký số</h3>
-            <p>Công cụ kiểm tra chữ ký số trên file PDF và chứng thư trong USB token, xuất báo cáo Excel/PDF —
-               miễn phí, chạy ngay trên trình duyệt. Đây chính là công cụ bạn đang sử dụng.</p>
-          </div>
-          <a class="btn btn-outline" href="/">Dùng ngay →</a>
-        </div>
-      </section>
-
-      <!-- VÌ SAO CHỌN -->
-      <section class="sec">
-        <div class="sec-head">
-          <h2>Vì sao chọn AWord?</h2>
-        </div>
-        <div class="why">
-          <ul class="why-list">
-            <li>
-              <span class="chk">✓</span>
-              <span><b>Thực tiễn, đúng nhu cầu</b><span class="t">Giải pháp xuất phát từ bài toán thật của đơn vị, không phô trương công nghệ, tập trung vào hiệu quả sử dụng.</span></span>
-            </li>
-            <li>
-              <span class="chk">✓</span>
-              <span><b>Đồng hành dài lâu</b><span class="t">Hỗ trợ từ tư vấn, triển khai đến vận hành và nâng cấp — luôn có người đồng hành khi cần.</span></span>
-            </li>
-            <li>
-              <span class="chk">✓</span>
-              <span><b>An toàn &amp; bảo mật</b><span class="t">Tôn trọng quyền riêng tư, bảo vệ dữ liệu; tuân thủ quy định khi xử lý thông tin của cơ quan, đơn vị.</span></span>
-            </li>
-            <li>
-              <span class="chk">✓</span>
-              <span><b>Tối ưu chi phí</b><span class="t">Ưu tiên giải pháp gọn nhẹ, dễ dùng, chi phí hợp lý và mang lại giá trị nhanh chóng.</span></span>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <!-- LIÊN HỆ -->
-      <section class="sec">
-        <div class="sec-head">
-          <h2>Liên hệ &amp; tư vấn</h2>
-          <span class="sec-sub">Miễn phí khảo sát nhu cầu</span>
-        </div>
-        <div class="contact-card">
-          <div class="qr-wrap">
-            <img src="assets/aword-qr.jpg" alt="Mã QR Zalo liên hệ AWord" />
-            <p class="qr-cap">Quét mã Zalo để kết nối &amp; nhận tư vấn</p>
-          </div>
-          <div class="contact-info">
-            <h2>Bắt đầu hành trình chuyển đổi số</h2>
-            <p class="ci-lead">Hãy chia sẻ bài toán của bạn — AWord sẽ tư vấn giải pháp phù hợp nhất, từ những bước nhỏ nhất.</p>
-            <div class="ci-row"><span class="ci-ic">📞</span> Hotline / Zalo: <a href="tel:0983606845">0983 606 845</a></div>
-            <div class="ci-row"><span class="ci-ic">🌐</span> Website: <a href="https://aword.vn" target="_blank" rel="noopener">aword.vn</a></div>
-            <div class="services">
-              <span class="chip">Tư vấn ứng dụng AI</span>
-              <span class="chip">Chuyển đổi số</span>
-              <span class="chip">Tự động hóa quy trình</span>
-              <span class="chip">Đào tạo &amp; chuyển giao</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div class="back">
-        <a class="btn btn-outline" href="/">← Về trang kiểm tra CKS</a>
-      </div>
-
     </div>
   </main>
 
-  <footer class="site-footer">© 2026 <a href="gioi-thieu.html">aword.vn</a> · Giải pháp AI &amp; chuyển đổi số</footer>
+  <footer class="site-footer">© 2026 <a href="gioi-thieu.html">AWord</a> · Giải pháp AI &amp; chuyển đổi số</footer>
 </body>
 </html>
